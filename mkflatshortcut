@@ -1,0 +1,29 @@
+#!/bin/sh
+# A script to generate shell scripts to run flatpak programs.
+
+# $0 refers to target flatpak program id
+# $1 refers to shortcut name
+
+help ()
+{
+	cat <<EOF
+$(basename "$0") flatpak_prog_id shortcut_name
+
+A script to create wrapper shell scripts as shortcuts to flatpak programs
+EOF
+}
+
+case "$1" in
+	-h|--help|help) help ; exit 1 ;;
+esac
+[ "$#" -lt 2 ] && { echo this program requires 2 arguments ; help ; exit 1 ; }
+
+prog_id="$1"
+shortcut_name="$2"
+
+cat > "$shortcut_name" <<EOF
+#!/bin/sh
+flatpak run "$prog_id" >/dev/null 2>&1 &
+EOF
+
+chmod +x "$shortcut_name"

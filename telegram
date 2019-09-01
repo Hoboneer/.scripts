@@ -1,0 +1,2 @@
+#!/bin/sh
+flatpak run "org.telegram.desktop" >/dev/null 2>&1 &

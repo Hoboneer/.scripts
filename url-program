@@ -1,0 +1,22 @@
+#!/usr/bin/env perl
+
+# Script to load the correct program for a given URL.
+# This assumes that the user is in a terminal.
+
+use strict;
+use warnings;
+
+if (not defined($ARGV[0])) {
+        exec 'www-browser';
+        die; 
+}
+for ($ARGV[0]) {
+        if ($_ eq '') { exec 'www-browser'; }
+        # Load subreddit
+        elsif (/https\:\/\/www.reddit.com\/r\/([A-Za-z]+)(\/)?/) { exec 'rtv', '-s', $1; }
+        # Load submission
+        elsif (/https\:\/\/www.reddit.com\/r\/[A-Za-z]+\/comments\/.*?/) { exec 'rtv', $_; }
+	else { exec 'www-browser', $_; }
+        last;
+}
+
