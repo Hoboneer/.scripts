@@ -3,7 +3,7 @@
 SCREEN_SESSION_NAME=desktop
 
 # Prevent multiple screens from existing.
-if [ $(screen -ls | awk -F'\t' -vscreen=$SCREEN_SESSION_NAME 'match($2, screen "$") {numscreens++} END {print numscreens}') -gt 0 ]; then
+if [ $(screen -ls | awk -F'\t' -vscreen=$SCREEN_SESSION_NAME -vnumscreens=0 'match($2, screen "$") {numscreens++} END {print numscreens}') -gt 0 ]; then
 	echo existing screen
 	exit 1
 fi
