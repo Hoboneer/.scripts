@@ -1,0 +1,31 @@
+#!/bin/sh
+# Search youtube for channels and open the first one in browser
+# Dependencies:
+#	* surfraw
+#	* tidy (html-tidy)
+#	* html-xml-utils
+
+# hxselect doesn't seem to allow case-insensitive matching (e.g., 'foo.bar[baz*="qux" i]')
+# TODO: Where to redirect stderr of surfraw and tidy?
+# TODO: Add options and help output?
+url="$(surfraw youtube -o -- "$@" 2>/dev/null | tidy -q -asxml 2>/dev/null | hxselect '.yt-lockup-content a.spf-link' | hxpipe | grep '^A\(href\|title\)' | awk -v search_terms="$*" -- '
+# Only Ahref and Atitle attributes are in the input
+/Ahref/ {
+	if ($3 ~ /^\/(user|channel)\//) curr_href=$3;
+}
+# Atitle should appear after Ahref...
+# TODO: Make sure this happens
+/Atitle/ {
+	sub("^(.*CDATA )", "", $0);
+	# No match.
+	if (!curr_href || !match(tolower($0), tolower(search_terms))) { curr_href=""; next; }
+	printf "https://www.youtube.com%s", curr_href;
+	exit;
+}
+')"
+if [ -z "$url" ]; then
+	echo could not find any channel whose name contains the search terms
+	exit 1
+else
+	exec ${BROWSER:-www-browser} "$url"
+fi
