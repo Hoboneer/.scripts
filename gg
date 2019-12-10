@@ -1,0 +1,7 @@
+#!/bin/sh
+# View commits easily
+commits="$(git log --oneline --grep="$*" | awk '{print $1}')"
+if [ -n "$commits" ]; then
+	# 'commits' is space-separated list of commit hashes
+	git show $commits
+fi
