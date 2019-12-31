@@ -28,5 +28,5 @@ if [ -z "$url" ]; then
 	echo could not find any channel whose name contains the search terms
 	exit 1
 else
-	exec ${BROWSER:-www-browser} "$url"
+	exec surfraw W $SURFRAW_FLAGS -- "$url"
 fi
