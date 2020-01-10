@@ -9,6 +9,11 @@
 # TODO: Where to redirect stderr of surfraw and tidy?
 # TODO: Add options and help output?
 # XXX: Maybe instead of opening first one in browser, instead, filter channels from surfraw output and display to user?
+
+# Do nothing on empty or all-whitespace input
+if echo "$*" | grep '^[[:space:]]*$' >/dev/null 2>&1; then
+	exit 0
+fi
 url="$(surfraw yt -type=channel -o -- "$@" 2>/dev/null | tidy -q -asxml 2>/dev/null | hxselect '.yt-lockup-content a.spf-link' | hxpipe | grep '^A\(href\|title\)' | awk -v search_terms="$*" -- '
 # Only Ahref and Atitle attributes are in the input
 /Ahref/ {
