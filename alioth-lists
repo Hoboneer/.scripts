@@ -14,20 +14,27 @@ Open the alioth mailing list matching PATTERN (BRE)
 
 Options:
   --help, -h	View this help message
+  --		End of options
 
 SURFRAW_FLAGS may be defined and is passed to `surfraw` upon list match.
 Defaults to ''.
 EOF
 }
 
+# Handle options.
+for arg; do
+	case "$arg" in
+		--help|-h) usage; exit 0;;
+		--) shift; break;;
+		-*) echo "'$arg' is an invalid option"; exit 1;;
+		# Assume the rest are args
+		*) break;;
+	esac
+done
 # Do nothing on empty or all-whitespace input
 if echo "$*" | grep '^[[:space:]]*$' >/dev/null 2>&1; then
 	exit 0
 fi
-# Handle options.
-case "$1" in
-	--help|-h) usage; exit 0;;
-esac
 # From personal bookmarks.
 base_url="$(surfraw alioth-lists -p)"
 list_url="$(surfraw W "$base_url" -o 2>/dev/null |
