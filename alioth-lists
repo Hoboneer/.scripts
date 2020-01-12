@@ -36,6 +36,7 @@ if echo "$*" | grep '^[[:space:]]*$' >/dev/null 2>&1; then
 	exit 0
 fi
 # From personal bookmarks.
+pattern="$1"
 base_url="$(surfraw alioth-lists -p)"
 list_url="$(surfraw W "$base_url" -o 2>/dev/null |
 	tidy -q -asxml 2>/dev/null |
@@ -48,10 +49,10 @@ list_url="$(surfraw W "$base_url" -o 2>/dev/null |
 	hxremove 'tr:nth-child(1)' |
 	hxselect -s '\n' -c 'tr > td:nth-child(1) > a::attr(href)' |
 	sed 's,^listinfo/,,' |
-	grep -i -- "$1" |
+	grep -i -- "$pattern" |
 	head -n 1)"
 if [ -z "$list_url" ]; then
-	echo could not find any list with the provided name
+	echo "could not find any list matching the pattern '$pattern'"
 	exit 1
 else
 	exec surfraw W $SURFRAW_FLAGS -- "$base_url/$list_url"
