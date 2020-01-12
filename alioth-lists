@@ -1,0 +1,51 @@
+#!/bin/sh
+# Quickly get to a mailing list on alioth (old) with a basic regular
+# expression (BRE).
+# Dependencies:
+# 	* surfraw
+# 	* tidy (html-tidy)
+# 	* html-xml-utils
+
+usage ()
+{
+	cat <<'EOF'
+Usage: alioth-lists [--help] PATTERN
+Open the alioth mailing list matching PATTERN (BRE)
+
+Options:
+  --help, -h	View this help message
+
+SURFRAW_FLAGS may be defined and is passed to `surfraw` upon list match.
+Defaults to ''.
+EOF
+}
+
+# Do nothing on empty or all-whitespace input
+if echo "$*" | grep '^[[:space:]]*$' >/dev/null 2>&1; then
+	exit 0
+fi
+# Handle options.
+case "$1" in
+	--help|-h) usage; exit 0;;
+esac
+# From personal bookmarks.
+base_url="$(surfraw alioth-lists -p)"
+list_url="$(surfraw W "$base_url" -o |
+	tidy -q -asxml 2>/dev/null |
+	hxselect 'table:nth-child(1) > tr' |
+	# Remove up to first row of data.
+	# I think the CSS comma operator does not work.
+	hxremove 'tr:nth-child(1)' |
+	hxremove 'tr:nth-child(1)' |
+	hxremove 'tr:nth-child(1)' |
+	hxremove 'tr:nth-child(1)' |
+	hxselect -s '\n' -c 'tr > td:nth-child(1) > a::attr(href)' |
+	sed 's,^listinfo/,,' |
+	grep -i -- "$1" |
+	head -n 1)"
+if [ -z "$list_url" ]; then
+	echo could not find any list with the provided name
+	exit 1
+else
+	exec surfraw W $SURFRAW_FLAGS -- "$base_url/$list_url"
+fi
