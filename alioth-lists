@@ -30,7 +30,7 @@ case "$1" in
 esac
 # From personal bookmarks.
 base_url="$(surfraw alioth-lists -p)"
-list_url="$(surfraw W "$base_url" -o |
+list_url="$(surfraw W "$base_url" -o 2>/dev/null |
 	tidy -q -asxml 2>/dev/null |
 	hxselect 'table:nth-child(1) > tr' |
 	# Remove up to first row of data.
