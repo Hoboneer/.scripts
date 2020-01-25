@@ -30,7 +30,7 @@ url="$(surfraw yt -type=channel -o -- "$@" 2>/dev/null | tidy -q -asxml 2>/dev/n
 }
 ')"
 if [ -z "$url" ]; then
-	echo could not find any channel whose name contains the search terms
+	echo could not find any channel whose name contains the search terms >&2
 	exit 1
 else
 	exec surfraw W $SURFRAW_FLAGS -- "$url"
