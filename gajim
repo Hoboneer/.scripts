@@ -1,2 +1,0 @@
-#!/bin/sh
-flatpak run "org.gajim.Gajim" >/dev/null 2>&1 &
