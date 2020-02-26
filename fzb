@@ -1,0 +1,5 @@
+#!/bin/sh
+# Open surfraw bookmark interactively
+. surfraw || exit 1
+bookmark="$(cat "$(find_local_conf bookmarks)" "$(find_global_conf bookmarks)" | fzf | cut -f 1)"
+[ -n "$bookmark" ] && exec surfraw "$bookmark"
