@@ -37,7 +37,7 @@ if echo "$*" | grep '^[[:space:]]*$' >/dev/null 2>&1; then
 fi
 # From personal bookmarks.
 pattern="$1"
-base_url="$(surfraw alioth-lists -p)"
+base_url='https://alioth-lists.debian.net/cgi-bin/mailman/listinfo'
 list_url="$(surfraw W "$base_url" -o 2>/dev/null |
 	tidy -q -asxml 2>/dev/null |
 	hxselect 'table:nth-child(1) > tr' |
