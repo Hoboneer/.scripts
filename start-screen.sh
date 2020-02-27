@@ -10,7 +10,8 @@ fi
 
 
 # Prefixing $TERM with 'screen' is necessary to get drawing for profanity working correctly.
-SCREEN_TERM=screen.$TERM
+# ... but with `st`, there is no `screen.st-256color` in terminfo.  So allow overriding.
+SCREEN_TERM="${SCREEN_TERM:-screen.$TERM}"
 screencmd="screen -S $SCREEN_SESSION_NAME -T $SCREEN_TERM"
 
 # Start programs that I want always on + a shell.
