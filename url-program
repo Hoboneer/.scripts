@@ -13,9 +13,9 @@ if (not defined($ARGV[0])) {
 for ($ARGV[0]) {
         if ($_ eq '') { exec 'www-browser'; }
         # Load submission
-        elsif (/https\:\/\/www.reddit.com\/r\/[A-Za-z]+\/comments\/.*?/) { exec 'rtv', $_; }
+        elsif (/^https\:\/\/www.reddit.com\/r\/[A-Za-z]+\/comments\/.*?$/) { exec 'rtv', $_; }
         # Load subreddit
-        elsif (/https\:\/\/www.reddit.com\/r\/([A-Za-z]+)(\/)?/) { exec 'rtv', '-s', $1; }
+        elsif (/^https\:\/\/www.reddit.com\/r\/([A-Za-z]+)(\/)?$/) { exec 'rtv', '-s', $1; }
 	else { exec 'www-browser', $_; }
         last;
 }
