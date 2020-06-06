@@ -2,4 +2,4 @@
 # Open surfraw bookmark interactively in a graphical browser
 . surfraw || exit 1
 bookmark="$(cat "$(find_local_conf bookmarks)" "$(find_global_conf bookmarks)" 2>/dev/null | fzf | cut -f 1)"
-[ -n "$bookmark" ] && exec surfraw -graphical -- "$bookmark"
+[ -n "$bookmark" ] && exec surfraw -graphical "$bookmark"
