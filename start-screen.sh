@@ -20,10 +20,10 @@ screencmd="screen -S $SCREEN_SESSION_NAME -T $SCREEN_TERM"
 $screencmd -dm bash -c 'exec bash'
 
 # Monitoring programs
-$screencmd -X screen dmesg -Hw
+$screencmd -X screen -t dmesg sudo dmesg -Hw
 $screencmd -X screen htop
 # Assumes that this script either: 1. is running under root; or 2. has the capabilities cap_net_{admin,raw} for the kernel, Linux.
-$screencmd -X screen nethogs
+$screencmd -X screen /usr/sbin/nethogs
 
 $screencmd -X screen profanity
 
