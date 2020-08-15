@@ -1,0 +1,73 @@
+#!/bin/bash
+source surfraw
+elvi=($(cd "$(get_local_elvi_dir)" 2>/dev/null && echo *
+	cd "$elvidir" 2>/dev/null && echo *))
+bookmarks=($(cut -f1 "$(find_local_conf bookmarks)" "$(find_global_conf bookmarks)" 2>/dev/null))
+
+# Determine elvis:
+elvis_exists ()
+{
+	for el in "${elvi[@]}" "${bookmarks[@]}"; do
+		if [ "$elvis" = "$el" ]; then
+			return 0
+		fi
+	done
+	return 1
+}
+elvis="$(echo "${elvi[@]}" "${bookmarks[@]}" | tr ' ' '\n' | dmenu -p 'Elvis?')"
+if [[ -z "$elvis" ]] || ! elvis_exists ; then
+	exit 1
+fi
+
+# Options + their args (if any):
+get_opt ()
+{
+	cat <(echo DONE) <(surfraw $elvis -complete=-) |
+		sed -e 's/^ //g' -e 's/ $//g' |
+		tr ' ' '\n' |
+		dmenu -p 'Option?'
+}
+
+OPTIONS=()
+opt=$(get_opt) || exit 1
+while [[ $opt != DONE ]]; do
+	case "$opt" in
+		-*=)
+			arg=$(surfraw $elvis -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?")
+			OPTIONS+=("$opt$arg")
+			;;
+		*)
+			OPTIONS+=("$opt")
+			;;
+	esac
+
+	opt=$(get_opt) || exit 1
+done
+
+# Plain args:
+do_field_split="$(printf 'yes\nno\n' | dmenu -p 'Do field splitting on query?')"
+
+get_arg ()
+{
+	cat <(echo '--SKIP--') <(surfraw $elvis -complete-arg=) | dmenu -p 'Query?'
+}
+ARGS=()
+case "$do_field_split" in
+	yes)
+		arg="$(get_arg)" || exit 1
+		# Do field splitting.
+		[[ $arg != '--SKIP--' ]] && ARGS+=($arg)
+		;;
+	no)
+		arg="$(get_arg)" || exit 1
+		while [[ $arg != '--SKIP--' ]]; do
+			ARGS+=("$arg")
+			arg="$(get_arg)" || exit 1
+		done
+		;;
+	*) exit 1 ;;
+esac
+
+
+# Finally, open browser:
+exec surfraw -graphical $elvis "${OPTIONS[@]}" -- "${ARGS[@]}"
