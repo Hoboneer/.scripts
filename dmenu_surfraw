@@ -4,6 +4,8 @@ elvi=($(cd "$(get_local_elvi_dir)" 2>/dev/null && echo *
 	cd "$elvidir" 2>/dev/null && echo *))
 bookmarks=($(cut -f1 "$(find_local_conf bookmarks)" "$(find_global_conf bookmarks)" 2>/dev/null))
 
+END_MANY_SELECT=DONE
+
 # Determine elvis:
 elvis_exists ()
 {
@@ -22,7 +24,7 @@ fi
 # Options + their args (if any):
 get_opt ()
 {
-	cat <(echo DONE) <(surfraw $elvis -complete=-) |
+	cat <(echo "$END_MANY_SELECT") <(surfraw $elvis -complete=-) |
 		sed -e 's/^ //g' -e 's/ $//g' |
 		tr ' ' '\n' |
 		dmenu -p 'Option?'
@@ -30,7 +32,7 @@ get_opt ()
 
 OPTIONS=()
 opt=$(get_opt) || exit 1
-while [[ $opt != DONE ]]; do
+while [[ $opt != $END_MANY_SELECT ]]; do
 	case "$opt" in
 		-*=)
 			arg=$(surfraw $elvis -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?")
@@ -51,19 +53,19 @@ get_arg ()
 {
 	local prompt
 	prompt="$1"
-	cat <(echo '--SKIP--') <(surfraw $elvis -complete-arg=) | dmenu -p "$prompt"
+	cat <(echo "--${END_MANY_SELECT}--") <(surfraw $elvis -complete-arg=) | dmenu -p "$prompt"
 }
 ARGS=()
 case "$do_field_split" in
 	yes)
 		arg="$(get_arg 'Query?')" || exit 1
 		# Do field splitting.
-		[[ $arg != '--SKIP--' ]] && ARGS+=($arg)
+		[[ $arg != "--${END_MANY_SELECT}--" ]] && ARGS+=($arg)
 		;;
 	no)
 		n=1
 		arg="$(get_arg "Query arg ${n}?")" || exit 1
-		while [[ $arg != '--SKIP--' ]]; do
+		while [[ $arg != "--${END_MANY_SELECT}--" ]]; do
 			ARGS+=("$arg")
 			n=$(( n + 1 ))
 			arg="$(get_arg "Query arg ${n}?")" || exit 1
