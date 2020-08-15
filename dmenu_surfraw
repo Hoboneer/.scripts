@@ -49,20 +49,24 @@ do_field_split="$(printf 'yes\nno\n' | dmenu -p 'Do field splitting on query?')"
 
 get_arg ()
 {
-	cat <(echo '--SKIP--') <(surfraw $elvis -complete-arg=) | dmenu -p 'Query?'
+	local prompt
+	prompt="$1"
+	cat <(echo '--SKIP--') <(surfraw $elvis -complete-arg=) | dmenu -p "$prompt"
 }
 ARGS=()
 case "$do_field_split" in
 	yes)
-		arg="$(get_arg)" || exit 1
+		arg="$(get_arg 'Query?')" || exit 1
 		# Do field splitting.
 		[[ $arg != '--SKIP--' ]] && ARGS+=($arg)
 		;;
 	no)
-		arg="$(get_arg)" || exit 1
+		n=1
+		arg="$(get_arg "Query arg ${n}?")" || exit 1
 		while [[ $arg != '--SKIP--' ]]; do
 			ARGS+=("$arg")
-			arg="$(get_arg)" || exit 1
+			n=$(( n + 1 ))
+			arg="$(get_arg "Query arg ${n}?")" || exit 1
 		done
 		;;
 	*) exit 1 ;;
