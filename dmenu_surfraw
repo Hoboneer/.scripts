@@ -35,7 +35,7 @@ opt=$(get_opt) || exit 1
 while [[ $opt != $END_MANY_SELECT ]]; do
 	case "$opt" in
 		-*=)
-			arg=$(surfraw $elvis -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?")
+			arg=$(surfraw $elvis -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?") || { opt=$(get_opt) && continue || exit 1; }
 			OPTIONS+=("$opt$arg")
 			;;
 		*)
