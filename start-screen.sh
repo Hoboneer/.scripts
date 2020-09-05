@@ -16,15 +16,13 @@ fi
 SCREEN_TERM="${SCREEN_TERM:-$TERM}"
 screencmd="screen -S $SCREEN_SESSION_NAME -T $SCREEN_TERM"
 
-# Start programs that I want always on + a shell.
-$screencmd -dm bash -c 'exec bash'
+# Start programs that I want always on:
+$screencmd -dm htop
 
-# Monitoring programs
 $screencmd -X screen -t dmesg sudo dmesg -Hw
-$screencmd -X screen htop
 # Assumes that this script either: 1. is running under root; or 2. has the capabilities cap_net_{admin,raw} for the kernel, Linux.
 $screencmd -X screen /usr/sbin/nethogs
 
 $screencmd -X screen profanity
 
-exec screen -T $SCREEN_TERM -p bash -r $SCREEN_SESSION_NAME
+exec screen -T $SCREEN_TERM -p htop -r $SCREEN_SESSION_NAME
