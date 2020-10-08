@@ -48,12 +48,17 @@ done
 
 # Plain args:
 do_field_split="$(printf 'yes\nno\n' | dmenu -p 'Do field splitting on query?')"
+do_accept_completions="$(printf 'yes\nno\n' | dmenu -p 'Accept completions?')"
 
 get_arg ()
 {
 	local prompt
 	prompt="$1"
-	cat <(echo "--${END_MANY_SELECT}--") <(surfraw $elvis -complete-arg=) | dmenu -p "$prompt"
+	case "$do_accept_completions" in
+		yes) cat <(echo "--${END_MANY_SELECT}--") <(surfraw $elvis -complete-arg=) | dmenu -p "$prompt" ;;
+		no) echo "--${END_MANY_SELECT}--" | dmenu -p "$prompt" ;;
+		*) exit 1 ;;
+	esac
 }
 ARGS=()
 case "$do_field_split" in
