@@ -1,4 +1,11 @@
 #!/bin/bash
+# It's simpler to use if the concepts are conflated.
+case "$DO_COMPLETE" in
+	yes) do_field_split=no do_accept_completions=yes ;;
+	no) do_field_split=yes do_accept_completions=no ;;
+	*) echo 'must set $DO_COMPLETE to (yes|no)' >&2; exit 1 ;;
+esac
+
 source surfraw
 elvi=($(cd "$(get_local_elvi_dir)" 2>/dev/null && echo *
 	cd "$elvidir" 2>/dev/null && echo *))
@@ -47,8 +54,8 @@ while [[ $opt != $END_MANY_SELECT ]]; do
 done
 
 # Plain args:
-do_field_split="$(printf 'yes\nno\n' | dmenu -p 'Do field splitting on query?')"
-do_accept_completions="$(printf 'yes\nno\n' | dmenu -p 'Accept completions?')"
+#do_field_split="$(printf 'yes\nno\n' | dmenu -p 'Do field splitting on query?')" || exit 1
+#do_accept_completions="$(printf 'yes\nno\n' | dmenu -p 'Accept completions?')" || exit 1
 
 get_arg ()
 {
