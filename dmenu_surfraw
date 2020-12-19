@@ -28,31 +28,6 @@ if [[ -z "$elvis" ]] || ! elvis_exists ; then
 	exit 1
 fi
 
-# Options + their args (if any):
-get_opt ()
-{
-	cat <(echo "$END_MANY_SELECT") <(surfraw $elvis -complete=-) |
-		sed -e 's/^ //g' -e 's/ $//g' |
-		tr ' ' '\n' |
-		dmenu -p 'Option?'
-}
-
-OPTIONS=()
-opt=$(get_opt) || exit 1
-while [[ $opt != $END_MANY_SELECT ]]; do
-	case "$opt" in
-		-*=)
-			arg=$(surfraw $elvis -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?") || { opt=$(get_opt) && continue || exit 1; }
-			OPTIONS+=("$opt$arg")
-			;;
-		*)
-			OPTIONS+=("$opt")
-			;;
-	esac
-
-	opt=$(get_opt) || exit 1
-done
-
 # Plain args:
 #do_field_split="$(printf 'yes\nno\n' | dmenu -p 'Do field splitting on query?')" || exit 1
 #do_accept_completions="$(printf 'yes\nno\n' | dmenu -p 'Accept completions?')" || exit 1
@@ -86,6 +61,30 @@ case "$do_field_split" in
 	*) exit 1 ;;
 esac
 
+# Options + their args (if any):
+get_opt ()
+{
+	cat <(echo "$END_MANY_SELECT") <(surfraw $elvis -complete=-) |
+		sed -e 's/^ //g' -e 's/ $//g' |
+		tr ' ' '\n' |
+		dmenu -p 'Option?'
+}
+
+OPTIONS=()
+opt=$(get_opt) || exit 1
+while [[ $opt != $END_MANY_SELECT ]]; do
+	case "$opt" in
+		-*=)
+			arg=$(surfraw $elvis -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?") || { opt=$(get_opt) && continue || exit 1; }
+			OPTIONS+=("$opt$arg")
+			;;
+		*)
+			OPTIONS+=("$opt")
+			;;
+	esac
+
+	opt=$(get_opt) || exit 1
+done
 
 # Finally, open browser:
 exec surfraw -graphical $elvis "${OPTIONS[@]}" -- "${ARGS[@]}"
