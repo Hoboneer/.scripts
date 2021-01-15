@@ -1,0 +1,3 @@
+#!/bin/sh
+# Watch the video specified by the file or URL in the primary X selection.
+exec mpv --volume 50 $@ -- "$(xclip -o)"
