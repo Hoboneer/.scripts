@@ -1,5 +1,8 @@
 #!/bin/bash
 # Merge two PDFs (one for each side) to look like it was a double-sided scan.
+set -eu
+set -o errexit
+set -o pipefail
 
 usage ()
 {
