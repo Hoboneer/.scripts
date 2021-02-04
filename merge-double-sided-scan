@@ -1,0 +1,47 @@
+#!/bin/bash
+# Merge two PDFs (one for each side) to look like it was a double-sided scan.
+
+usage ()
+{
+	cat <<'EOF'
+Usage: merge-double-sided-scan [--help] file file
+Merge two PDFs (one for each side) to look like it was a double-sided scan.
+
+Options:
+  --help, -h	View this help message
+EOF
+}
+
+case "$1" in
+	--help|-h) usage; exit ;;
+esac
+
+[ -z "$1" ] && { echo "first file argument missing" >&2; exit 1; }
+[ -z "$2" ] && { echo "second file argument missing" >&2; exit 1; }
+
+page_count_f1="$(pdfinfo "$1" | grep '^Pages:' | awk '{print $2}')" || { echo "'$1' is an invalid PDF file" >&2; exit 1; }
+page_count_f2="$(pdfinfo "$2" | grep '^Pages:' | awk '{print $2}')" || { echo "'$2' is an invalid PDF file" >&2; exit 1; }
+if [ "$page_count_f1" -lt "$page_count_f2" ] || [ "$(( page_count_f1 - page_count_f2 ))" -gt 1 ]; then
+	echo "page count of first file must be equal to or just one greater than the page count of second file" >&2
+	exit 1
+fi
+
+cmd_line=()
+currpage_f1=1
+currpage_f2=1
+nextfile=1
+until [ $currpage_f1 -gt $page_count_f1 ] && [ $currpage_f2 -gt $page_count_f2 ]; do
+	case $nextfile in
+		1)
+			cmd_line+=("$1" $currpage_f1)
+			currpage_f1="$(( currpage_f1 + 1 ))"
+			nextfile=2
+			;;
+		2)
+			cmd_line+=("$2" $currpage_f2)
+			currpage_f2="$(( currpage_f2 + 1 ))"
+			nextfile=1
+			;;
+	esac
+done
+mutool merge "${cmd_line[@]}"
