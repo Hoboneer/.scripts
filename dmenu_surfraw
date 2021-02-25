@@ -1,5 +1,7 @@
 #!/bin/bash
 # It's simpler to use if the concepts are conflated.
+export IN_DMENU_SURFRAW=yes
+
 case "$DO_COMPLETE" in
 	yes) do_field_split=no do_accept_completions=yes ;;
 	no) do_field_split=yes do_accept_completions=no ;;
