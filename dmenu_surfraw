@@ -1,11 +1,13 @@
 #!/bin/bash
-# It's simpler to use if the concepts are conflated.
 export IN_DMENU_SURFRAW=yes
 
+me=dmenu_surfraw
+
+# It's simpler to use if the concepts are conflated.
 case "$DO_COMPLETE" in
 	yes) do_field_split=no do_accept_completions=yes ;;
 	no) do_field_split=yes do_accept_completions=no ;;
-	*) echo 'must set $DO_COMPLETE to (yes|no)' >&2; exit 1 ;;
+	*) notify-send -t 1000 "$me: must set \$DO_COMPLETE to (yes|no)"; exit 1 ;;
 esac
 
 source surfraw
@@ -19,14 +21,18 @@ END_MANY_SELECT=DONE
 elvis_exists ()
 {
 	for el in "${elvi[@]}" "${bookmarks[@]}"; do
-		if [ "$elvis" = "$el" ]; then
+		if [ "$1" = "$el" ]; then
 			return 0
 		fi
 	done
 	return 1
 }
-elvis="$(echo "${elvi[@]}" "${bookmarks[@]}" | tr ' ' '\n' | dmenu -p 'Elvis?')"
-if [[ -z "$elvis" ]] || ! elvis_exists ; then
+elvis="$(echo "${elvi[@]}" "${bookmarks[@]}" | tr ' ' '\n' | dmenu -p 'Elvis?')" || exit 1  # back out.
+if [[ -z "$elvis" ]]; then
+	notify-send -t 1000 "$me: empty elvis"
+	exit 1
+elif ! elvis_exists "$elvis" ; then
+	notify-send -t 1000 "$me: '$elvis' doesn't exist"
 	exit 1
 fi
 
@@ -41,7 +47,7 @@ get_arg ()
 	case "$do_accept_completions" in
 		yes) cat <(echo "--${END_MANY_SELECT}--") <(surfraw $elvis -complete-arg=) | dmenu -p "$prompt" ;;
 		no) echo "--${END_MANY_SELECT}--" | dmenu -p "$prompt" ;;
-		*) exit 1 ;;
+		*) notify-send -t 5000 "$me: bug!  \$do_accept_completions invalid"; exit 1 ;;
 	esac
 }
 ARGS=()
