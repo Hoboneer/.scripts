@@ -3,11 +3,9 @@ export IN_DMENU_SURFRAW=yes
 
 me=dmenu_surfraw
 
-# It's simpler to use if the concepts are conflated.
-case "$DO_COMPLETE" in
-	yes) do_field_split=no do_accept_completions=yes ;;
-	no) do_field_split=yes do_accept_completions=no ;;
-	*) notify-send -t 1000 "$me: must set \$DO_COMPLETE to (yes|no)"; exit 1 ;;
+case "$DO_FIELD_SPLIT" in
+	yes|no) ;;
+	*) notify-send -t 1000 "$me: must set \$DO_FIELD_SPLIT to (yes|no)"; exit 1 ;;
 esac
 
 source surfraw
@@ -44,14 +42,10 @@ get_arg ()
 {
 	local prompt
 	prompt="$1"
-	case "$do_accept_completions" in
-		yes) cat <(echo "--${END_MANY_SELECT}--") <(surfraw $elvis -complete-arg=) | dmenu -p "$prompt" ;;
-		no) echo "--${END_MANY_SELECT}--" | dmenu -p "$prompt" ;;
-		*) notify-send -t 5000 "$me: bug!  \$do_accept_completions invalid"; exit 1 ;;
-	esac
+	cat <(echo "--${END_MANY_SELECT}--") <(surfraw "$elvis" -complete-arg=) | dmenu -p "$prompt"
 }
 ARGS=()
-case "$do_field_split" in
+case "$DO_FIELD_SPLIT" in
 	yes)
 		arg="$(get_arg 'Query?')" || exit 1
 		# Do field splitting.
