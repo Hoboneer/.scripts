@@ -52,13 +52,13 @@ case "$DO_FIELD_SPLIT" in
 		[[ $arg != "--${END_MANY_SELECT}--" ]] && ARGS+=($arg)
 		;;
 	no)
+		# bash do-while loop: https://stackoverflow.com/a/24421013
 		n=1
-		arg="$(get_arg "Query arg ${n}?")" || exit 1
-		while [[ $arg != "--${END_MANY_SELECT}--" ]]; do
-			ARGS+=("$arg")
-			n=$(( n + 1 ))
+		while
 			arg="$(get_arg "Query arg ${n}?")" || exit 1
-		done
+			[[ $arg != "--${END_MANY_SELECT}--" ]]
+		do	ARGS+=("$arg"); ((n++)); done
+
 		;;
 	*) exit 1 ;;
 esac
@@ -71,13 +71,30 @@ get_opt ()
 		tr ' ' '\n' |
 		dmenu -p 'Option?'
 }
+get_optarg ()
+{
+	local opt endsentinel
+	opt="$1" endsentinel="$2"
+	{ [ -n "$endsentinel" ] && echo "$endsentinel"; surfraw "$elvis" -complete="$opt"; } | tr ' ' '\n' | dmenu -p "Arg to '$opt'?"
+}
 
 OPTIONS=()
 opt=$(get_opt) || exit 1
+listargs=()
 while [[ $opt != $END_MANY_SELECT ]]; do
 	case "$opt" in
+		-add-*=)
+			# bash do-while loop: https://stackoverflow.com/a/24421013
+			while
+				arg=$(get_optarg "$opt" "--${END_MANY_SELECT}--") ||
+					# go to outer while loop to get new options (because we're cancelling this one!)
+					{ opt=$(get_opt) && { listargs=(); continue; } || exit 1; }
+				[[ $arg != "--${END_MANY_SELECT}--" ]]
+			do	listargs+=("$arg"); done
+			IFS=','; OPTIONS+=("$opt${listargs[*]}"); IFS=$' \t\n'
+			;;
 		-*=)
-			arg=$(surfraw "$elvis" -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?") || { opt=$(get_opt) && continue || exit 1; }
+			arg=$(get_optarg "$opt") || { opt=$(get_opt) && continue || exit 1; }
 			OPTIONS+=("$opt$arg")
 			;;
 		*)
