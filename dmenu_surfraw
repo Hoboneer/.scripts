@@ -42,7 +42,7 @@ get_arg ()
 {
 	local prompt
 	prompt="$1"
-	cat <(echo "--${END_MANY_SELECT}--") <(surfraw "$elvis" -complete-arg=) | dmenu -p "$prompt"
+	{ echo "--${END_MANY_SELECT}--"; surfraw "$elvis" -complete-arg=; } | dmenu -p "$prompt"
 }
 ARGS=()
 case "$DO_FIELD_SPLIT" in
@@ -66,7 +66,7 @@ esac
 # Options + their args (if any):
 get_opt ()
 {
-	cat <(echo "$END_MANY_SELECT") <(surfraw $elvis -complete=-) |
+	{ echo "$END_MANY_SELECT"; surfraw "$elvis" -complete=-; } |
 		sed -e 's/^ //g' -e 's/ $//g' |
 		tr ' ' '\n' |
 		dmenu -p 'Option?'
@@ -77,7 +77,7 @@ opt=$(get_opt) || exit 1
 while [[ $opt != $END_MANY_SELECT ]]; do
 	case "$opt" in
 		-*=)
-			arg=$(surfraw $elvis -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?") || { opt=$(get_opt) && continue || exit 1; }
+			arg=$(surfraw "$elvis" -complete="$opt" | tr ' ' '\n' | dmenu -p "Arg to '$opt'?") || { opt=$(get_opt) && continue || exit 1; }
 			OPTIONS+=("$opt$arg")
 			;;
 		*)
@@ -89,4 +89,4 @@ while [[ $opt != $END_MANY_SELECT ]]; do
 done
 
 # Finally, open browser:
-exec surfraw -graphical $elvis "${OPTIONS[@]}" -- "${ARGS[@]}"
+exec surfraw -graphical "$elvis" "${OPTIONS[@]}" -- "${ARGS[@]}"
