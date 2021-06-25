@@ -5,19 +5,38 @@ get_filename ()
 	echo "$HOME/Pictures/screenshot-$(date +%Y-%m-%dT%H:%M:%S).png"
 }
 
+do_window ()
+{
+	maim --window $(xdotool getactivewindow)
+}
+do_screen ()
+{
+	maim
+}
+do_selection ()
+{
+	maim --select
+}
+
 options=\
 'window
 screen
+selection
 clipboard
 '
-case "$(echo "$options" | dmenu -i -p 'What kind of screenshot?')" in
-	window)
+opt="$(echo "$options" | dmenu -i -p 'What kind of screenshot?')" || exit 1
+case "$opt" in
+	window|screen|selection)
 		f="$(get_filename)"
-		maim --window $(xdotool getactivewindow) "$f" && notify-send -t 2000 "Screenshot saved to $f"
+		cmd=do_$opt
+		$cmd > "$f" && notify-send -t 2000 "Screenshot saved to $f"
 		;;
-	screen)
-		f="$(get_filename)"
-		maim "$f" && notify-send -t 2000 "Screenshot saved to $f"
+	clipboard)
+		kind="$(echo "$options" | grep -vFx 'clipboard' | dmenu -i -p 'What kind of clipboard screenshot?')" || exit 1
+		case "$kind" in
+			window|screen|selection) cmd=do_$kind ;;
+			*) exit 1 ;;
+		esac
+		$cmd | xclip -selection clipboard -target image/png && notify-send -t 500 'Screenshot saved to clipboard'
 		;;
-	clipboard) maim --select | xclip -selection clipboard -target image/png && notify-send -t 500 'Screenshot saved to clipboard' ;;
 esac
