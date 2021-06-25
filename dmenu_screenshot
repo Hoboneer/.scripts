@@ -1,0 +1,23 @@
+#!/bin/sh
+# A screenshot utility using dmenu
+get_filename ()
+{
+	echo "$HOME/Pictures/screenshot-$(date +%Y-%m-%dT%H:%M:%S).png"
+}
+
+options=\
+'window
+screen
+clipboard
+'
+case "$(echo "$options" | dmenu -i -p 'What kind of screenshot?')" in
+	window)
+		f="$(get_filename)"
+		maim --window $(xdotool getactivewindow) "$f" && notify-send -t 2000 "Screenshot saved to $f"
+		;;
+	screen)
+		f="$(get_filename)"
+		maim "$f" && notify-send -t 2000 "Screenshot saved to $f"
+		;;
+	clipboard) maim --select | xclip -selection clipboard -target image/png && notify-send -t 500 'Screenshot saved to clipboard' ;;
+esac
