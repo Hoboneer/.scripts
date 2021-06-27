@@ -1,0 +1,39 @@
+#!/bin/sh
+# DESCRIPTION: chord watcher for sxhkcd to use in indicating mode in wm
+# DEPENDENCIES: ...
+# ARGUMENTS:
+#   $1: fifo that sxhkd writes its status info to
+
+MODE_RESIZE='Hmod4+r'
+
+new_chain=0  # don't know if non-aborting chain yet
+mode=default
+while read line; do
+	case "$line" in
+		B*)
+			new_chain=1
+			notify-send -t 500 "Began chord chain"
+			;;
+		E*)
+			if [ "$mode" != default ]; then
+				notify-send -t 500 "Left $mode mode"
+			else
+				notify-send -t 500 "Finished chord chain"
+			fi
+			new_chain=0
+			mode=default
+			;;
+		"$MODE_RESIZE"*)
+			if [ "$new_chain" = 1 ]; then
+				new_chain=0
+				case "$line" in
+					"$MODE_RESIZE"*) mode=resize ;;
+				esac
+				notify-send -t 500 "In $mode mode"
+			fi
+			;;
+		# TODO: do something with commands (C*).
+		C*|*)   new_chain=0
+			;;
+	esac
+done < "$1"
