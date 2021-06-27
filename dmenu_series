@@ -1,0 +1,77 @@
+#!/bin/sh
+# DESCRIPTION: manage the watching of series (shows, anime, etc.)
+# DEPENDENCIES: dmenu mpv notify-send
+
+seriesdir="${HOME}/series"
+
+check_sure ()
+{
+	answer="$(printf 'no\nyes\n' | dmenu -i -p 'Are you sure?')" || return 1
+	case "$answer" in
+		no) return 1 ;;
+		yes) return 0 ;;
+	esac
+}
+INFO ()
+{
+	notify-send -t 3000 "$1"
+}
+ERROR ()
+{
+	notify-send -t 5000 "$1"
+	exit 1
+}
+
+series="$(find "$seriesdir" -maxdepth 1 -type d -o -type l | sort | grep -vFx "$seriesdir" | xargs -n1 basename | dmenu -i -p 'Which series?')" || exit 1
+cd "$seriesdir/$series" || ERROR "'$series' doesn't exist"
+
+options=\
+'watch
+fetch
+comments
+tracker
+inc-pos
+dec-pos
+playlist-view
+playlist-update
+'
+option="$(echo "$options" | dmenu -i -p 'What to do?')" || exit 1
+case "$option" in
+	watch)
+		missing=''
+		for f in progress playlist; do
+			[ ! -r "$f" ] && missing="$missing $(basename "$f")"
+		done
+		[ -n "$missing" ] && ERROR "Missing files needed to play $series:$missing"
+
+		if [ -x play ]; then
+			exec ./play
+		else
+			exec mpv --volume 50 --playlist playlist --playlist-start "$(cat progress 2>/dev/null || { echo 0 | tee progress; })"
+		fi
+		;;
+	fetch|comments|tracker)	# get new episode manually | view comments | update tracker manually
+		[ ! -x "$option" ] && ERROR "Missing '$option' script"
+		exec ./$option
+		;;
+	inc-pos)
+		pos="$(cat progress 2>/dev/null || echo 0)"
+		pos="$(( pos + 1 ))" 
+		check_sure && echo "$pos" > progress && INFO "Incremented $series position to $pos"
+		;;
+	dec-pos)
+		pos="$(cat progress 2>/dev/null)" || ERROR "Can't decrement position in $series because 'progress' file doesn't exist"
+		[ "$pos" -eq 0 ] && ERROR "Can't decrement from 0"
+		pos="$(( pos - 1 ))" 
+		check_sure && echo "$pos" > progress && INFO "Decremented $series position to $pos"
+		;;
+	playlist-view)	# view playlist
+		[ ! -r playlist ] && ERROR "Missing 'playlist' file"
+		dmenu -l 20 < playlist
+		;;
+	playlist-update)
+		[ !-x mkplaylist ] && ERROR "Missing 'mkplaylist' file"
+		./mkplaylist && INFO "Updated playlist for $series"
+		;;
+
+esac
