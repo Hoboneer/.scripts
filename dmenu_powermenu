@@ -1,0 +1,26 @@
+#!/bin/sh
+option="$(cat <<EOF | dmenu -i -p 'What power operation?'
+logout
+shutdown
+restart
+EOF
+)" || exit 1
+
+sure="$(printf 'no\nyes\n' | dmenu -i -p 'Are you sure?')" || exit 1
+[ "$sure" != yes ] && exit 1
+
+case "$option" in
+	logout)
+		notify-send -t 5000 -u critical 'Logging out...'
+		i3-msg exit
+		;;
+	shutdown)
+		notify-send -t 5000 -u critical 'Shutting down...'
+		systemctl poweroff
+		;;
+	restart)
+		notify-send -t 5000 -u critical 'Restarting...'
+		systemctl reboot
+		;;
+esac
+
