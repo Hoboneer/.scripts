@@ -3,37 +3,39 @@
 # DEPENDENCIES: ...
 # ARGUMENTS:
 #   $1: fifo that sxhkd writes its status info to
+#   $2: fifo to write bspwm's mode into
 
-MODE_RESIZE='Hmod4+r'
+MODE_RESIZE='mod4 + r'
+MODE_MOVE_FLOATING='mod4 + shift + f'
 
-new_chain=0  # don't know if non-aborting chain yet
-mode=default
+first_seen=1 # can't seem to rely on sequencing of B* and H* for chords
+mode=normal
+echo "$mode" > "$2"
 while read line; do
 	case "$line" in
 		B*)
-			new_chain=1
 			notify-send -t 500 "Began chord chain"
 			;;
-		E*)
-			if [ "$mode" != default ]; then
-				notify-send -t 500 "Left $mode mode"
-			else
-				notify-send -t 500 "Finished chord chain"
-			fi
-			new_chain=0
-			mode=default
+		# Complete or time-out of chord chain
+		E*|T*)
+			notify-send -t 500 "Finished chord chain"
+			first_seen=1
+			mode=normal
+			echo "$mode" > "$2"
 			;;
-		"$MODE_RESIZE"*)
-			if [ "$new_chain" = 1 ]; then
-				new_chain=0
+		# These chain keybinds are unable to conflict with non-chains
+		?"$MODE_RESIZE"*|?"$MODE_MOVE_FLOATING"*)
+			if [ "$first_seen" = 1 ]; then
+				first_seen=0
 				case "$line" in
-					"$MODE_RESIZE"*) mode=resize ;;
+					?"$MODE_RESIZE"*) mode=resize ;;
+					?"$MODE_MOVE_FLOATING"*) mode=move_floating ;;
 				esac
-				notify-send -t 500 "In $mode mode"
+				echo "$mode" > "$2"
 			fi
 			;;
 		# TODO: do something with commands (C*).
-		C*|*)   new_chain=0
+		C*|*)   :
 			;;
 	esac
 done < "$1"

@@ -12,7 +12,7 @@ sure="$(printf 'no\nyes\n' | dmenu -i -p 'Are you sure?')" || exit 1
 case "$option" in
 	logout)
 		notify-send -t 5000 -u critical 'Logging out...'
-		i3-msg exit
+		bspc quit
 		;;
 	shutdown)
 		notify-send -t 5000 -u critical 'Shutting down...'
