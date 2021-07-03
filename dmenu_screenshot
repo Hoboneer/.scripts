@@ -29,7 +29,7 @@ case "$opt" in
 	window|screen|selection)
 		f="$(get_filename)"
 		cmd=do_$opt
-		$cmd > "$f" && notify-send -t 2000 "Screenshot saved to $f"
+		$cmd > "$f".tmp && { mv "$f".tmp "$f"; notify-send -t 2000 "Screenshot saved to $f"; } || rm -f "$f".tmp
 		;;
 	clipboard)
 		kind="$(echo "$options" | sed '1d; $d' | grep -vFx 'clipboard' | dmenu -i -p 'What kind of clipboard screenshot?')" || exit 1
