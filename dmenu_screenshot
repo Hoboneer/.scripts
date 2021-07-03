@@ -37,6 +37,8 @@ case "$opt" in
 			window|screen|selection) cmd=do_$kind ;;
 			*) exit 1 ;;
 		esac
-		$cmd | xclip -selection clipboard -target image/png && notify-send -t 500 'Screenshot saved to clipboard'
+		f="$(mktemp)"
+		$cmd > "$f" && { xclip -selection clipboard -target image/png < "$f"; notify-send -t 500 'Screenshot saved to clipboard'; }
+		rm -f "$f"
 		;;
 esac
