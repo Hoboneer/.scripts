@@ -1,0 +1,35 @@
+#!/bin/sh
+# DESCRIPTION: Remove copyright information from the start of videos from UoA.
+# DEPENDENCIES: ffmpeg
+usage ()
+{
+	cat <<EOF
+usage: rmuacr [--help] infile [outfile]
+
+Remove copyright information from the start of videos from UoA.
+Kind of pointless since mpv has a --start option.
+
+By default, outfile is INFILE_BASE-out.INFILE_EXT
+EOF
+}
+# Check for --help anywhere in command line.
+for arg in "$@"; do
+	case "$arg" in
+		--help|-h) usage; exit 0 ;;
+	esac
+done
+[ -z "$1" ] && { echo infile is required >&2; exit 1; }
+infile="$1"
+# Strip suffix and prefix to get filename parts.
+base="${infile%.*}"
+ext="${infile##*.}"
+if [ -z "$ext" ]; then
+	echo infile must have an extension >&2
+	exit 1
+fi
+if [ -n "$2" ]; then
+	outfile="$2"
+else
+	outfile="$base-out.$ext"
+fi
+exec ffmpeg -i "$infile" -ss 0:42 "$outfile"
