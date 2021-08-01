@@ -67,7 +67,18 @@ case "$option" in
 		;;
 	playlist-view)	# view playlist
 		[ ! -r playlist ] && ERROR "Missing 'playlist' file"
-		dmenu -l 20 < playlist
+		pos="$(cat progress 2>/dev/null || echo 0)"
+		offset="$(cat playlist-offset 2>/dev/null || echo 0)"
+		# Add '* ' prefix for the video to be played *next*.
+		i=0
+		while read -r line; do
+			if [ $i -eq "$(( pos + offset ))" ]; then
+				echo "* $line"
+			else
+				echo "$line"
+			fi
+			i=$(( i+1 ))
+		done < playlist | dmenu -l 20
 		;;
 	playlist-update)
 		[ !-x mkplaylist ] && ERROR "Missing 'mkplaylist' file"
