@@ -47,7 +47,9 @@ case "$option" in
 		if [ -x play ]; then
 			exec ./play
 		else
-			exec mpv --volume 50 --playlist playlist --playlist-start "$(cat progress 2>/dev/null || { echo 0 | tee progress; })"
+			pos="$(cat progress 2>/dev/null || { echo 0 | tee progress; })"
+			offset="$(cat playlist-offset 2>/dev/null || echo 0)"
+			exec mpv --volume 50 --playlist playlist --playlist-start "$(( pos + offset ))"
 		fi
 		;;
 	fetch|comments|tracker)	# get new episode manually | view comments | update tracker manually
