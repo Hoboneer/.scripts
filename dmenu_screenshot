@@ -22,23 +22,50 @@ options='
 window
 screen
 selection
+'
+dests='
 clipboard
+file
 '
 opt="$(echo "$options" | sed '1d; $d' | dmenu -i -p 'What kind of screenshot?')" || exit 1
+err=0
 case "$opt" in
 	window|screen|selection)
-		f="$(get_filename)"
-		cmd=do_$opt
-		$cmd > "$f".tmp && { mv "$f".tmp "$f"; notify-send -t 2000 "Screenshot saved to $f"; } || rm -f "$f".tmp
-		;;
-	clipboard)
-		kind="$(echo "$options" | sed '1d; $d' | grep -vFx 'clipboard' | dmenu -i -p 'What kind of clipboard screenshot?')" || exit 1
-		case "$kind" in
-			window|screen|selection) cmd=do_$kind ;;
-			*) exit 1 ;;
-		esac
 		f="$(mktemp)"
-		$cmd > "$f" && { xclip -selection clipboard -target image/png < "$f"; notify-send -t 500 'Screenshot saved to clipboard'; }
+		cmd=do_$opt
+		dest="$(echo "$dests" | sed '1d; $d' | dmenu -i -p 'Save where?')" || exit 1
+		if $cmd > "$f"; then
+			case "$dest" in
+				clipboard)
+					xclip -selection clipboard -target image/png < "$f"
+					notify-send -t 500 'Screenshot saved to clipboard'
+					;;
+				file)
+					realf="$(get_filename)"
+					if mv "$f" "$realf"; then
+						notify-send -t 2000 "Screenshot saved to '$realf'"
+					else
+						notify-send -t 5000 -u critical "dmenu_screenshot: failed to save screenshot" "Tried to save to '$realf' but mv failed"
+						err=1
+					fi
+					;;
+				*)
+					notify-send -t 5000 -u critical \
+						"dmenu_screenshot: invalid destination" \
+						"Got '$dest' but should be one of '$(echo "$dests" | sed '1d; $d' | tr '\n' ' ' | sed 's/ $//')'"
+					err=1
+					;;
+			esac
+		else
+			notify-send -t 5000 -u critical "dmenu_screenshot: maim failed or saving to tempfile failed"
+			err=1
+		fi
 		rm -f "$f"
 		;;
+	*)
+		notify-send -t 5000 -u critical \
+			"dmenu_screenshot: invalid option" \
+			"Got '$opt' but should be one of '$(echo "$options" | sed '1d; $d' | tr '\n' ' ' | sed 's/ $//')'"
+		err=1 ;;
 esac
+[ "$err" -ne 0 ] && exit "$err"
