@@ -6,11 +6,16 @@
 
 # In minutes; 1 hour default.
 WATCH_INTERVAL="$(( ${WATCH_INTERVAL:-60} * 60 ))"
-clear
-printf 'watch_weather: every %d mins\n' "$WATCH_INTERVAL"
+
+do_header ()
+{
+	clear
+	printf 'watch_weather: every %d mins | fetched on %s\n' "$WATCH_INTERVAL" "$(date)"
+}
+
+do_header
 curl --silent --show-error wttr.in
 while sleep "$WATCH_INTERVAL"; do
-	clear
-	printf 'watch_weather: every %d mins\n' "$WATCH_INTERVAL"
+	do_header
 	curl --silent --show-error wttr.in
 done
