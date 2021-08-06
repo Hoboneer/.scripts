@@ -1,0 +1,16 @@
+#!/bin/sh
+# DESCRIPTION: Repeatedly get weather forecast from wttr.in without `watch`
+# DEPENDENCIES: curl
+# The reason for *not* using `watch` is because, although the ANSI escapes are processed by `watch`,
+# no colour is actually output.
+
+# In minutes; 1 hour default.
+WATCH_INTERVAL="$(( ${WATCH_INTERVAL:-60} * 60 ))"
+clear
+printf 'watch_weather: every %d mins\n' "$WATCH_INTERVAL"
+curl --silent --show-error wttr.in
+while sleep "$WATCH_INTERVAL"; do
+	clear
+	printf 'watch_weather: every %d mins\n' "$WATCH_INTERVAL"
+	curl --silent --show-error wttr.in
+done
