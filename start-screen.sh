@@ -20,8 +20,10 @@ screencmd="screen -S $SCREEN_SESSION_NAME -T $SCREEN_TERM"
 $screencmd -dm htop
 
 $screencmd -X screen -t dmesg sudo dmesg -Hw
-# Assumes that this script either: 1. is running under root; or 2. has the capabilities cap_net_{admin,raw} for the kernel, Linux.
-$screencmd -X screen /usr/sbin/nethogs
+# I barely actually look at nethogs.
+## Assumes that this script either: 1. is running under root; or 2. has the capabilities cap_net_{admin,raw} for the kernel, Linux.
+#$screencmd -X screen /usr/sbin/nethogs
+$screencmd -X screen -t weather watch_weather
 
 $screencmd -X screen profanity
 
