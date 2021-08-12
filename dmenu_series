@@ -27,6 +27,8 @@ do_play ()
 	if [ -n "$1" ]; then
 		pos="$1"
 	else
+		# `progress` contains the *latest* episode played (not the next one).
+		# The playlist is zero-indexed, so it happens to be the *next* one too.
 		pos="$(cat progress 2>/dev/null || { echo 0 | tee progress; })"
 	fi
 	offset="$(cat playlist-offset 2>/dev/null || echo 0)"
@@ -78,10 +80,10 @@ case "$option" in
 		offset="$(cat playlist-offset 2>/dev/null || echo 0)"
 		toplay="$(
 			# Start indices from the right position based on the offset.
-			i="$(( 0 - offset ))"
+			i="$(( 0 - offset + 1 ))"
 			while read -r line; do
 				# Add '* ' prefix for the video to be played *next*.
-				if [ "$i" -eq "$pos" ]; then
+				if [ "$i" -eq "$(( pos + 1 ))" ]; then
 					echo "$i) * $line"
 				else
 					echo "$i) $line"
@@ -90,7 +92,7 @@ case "$option" in
 			done < playlist | dmenu -l 20 | sed 's/\(^[[:digit:]]\+\)).\+/\1/'
 		)" || exit 0
 		if [ -n "$toplay" ]; then
-			do_play "$toplay"
+			do_play "$(( toplay - 1 ))"
 		fi
 		;;
 	playlist-update)
