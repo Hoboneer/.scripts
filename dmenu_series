@@ -93,7 +93,7 @@ case "$option" in
 		fi
 		;;
 	playlist-update)
-		[ !-x mkplaylist ] && ERROR "Missing 'mkplaylist' file"
+		[ ! -x mkplaylist ] && ERROR "Missing 'mkplaylist' file"
 		./mkplaylist && INFO "Updated playlist for $series"
 		;;
 
