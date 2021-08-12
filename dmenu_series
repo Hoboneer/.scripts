@@ -21,6 +21,17 @@ ERROR ()
 	notify-send -t 5000 "$1"
 	exit 1
 }
+do_play ()
+{
+	local pos offset
+	if [ -n "$1" ]; then
+		pos="$1"
+	else
+		pos="$(cat progress 2>/dev/null || { echo 0 | tee progress; })"
+	fi
+	offset="$(cat playlist-offset 2>/dev/null || echo 0)"
+	exec mpv --volume 50 --playlist playlist --playlist-start "$(( pos + offset ))"
+}
 
 series="$(find "$seriesdir" -maxdepth 1 -type d -o -type l | sort | grep -vFx "$seriesdir" | xargs -n1 basename | dmenu -i -p 'Which series?')" || exit 1
 cd "$seriesdir/$series" || ERROR "'$series' doesn't exist"
@@ -44,13 +55,7 @@ case "$option" in
 		done
 		[ -n "$missing" ] && ERROR "Missing files needed to play $series:$missing"
 
-		if [ -x play ]; then
-			exec ./play
-		else
-			pos="$(cat progress 2>/dev/null || { echo 0 | tee progress; })"
-			offset="$(cat playlist-offset 2>/dev/null || echo 0)"
-			exec mpv --volume 50 --playlist playlist --playlist-start "$(( pos + offset ))"
-		fi
+		do_play
 		;;
 	fetch|comments|tracker)	# get new episode manually | view comments | update tracker manually
 		[ ! -x "$option" ] && ERROR "Missing '$option' script"
@@ -71,16 +76,21 @@ case "$option" in
 		[ ! -r playlist ] && ERROR "Missing 'playlist' file"
 		pos="$(cat progress 2>/dev/null || echo 0)"
 		offset="$(cat playlist-offset 2>/dev/null || echo 0)"
-		# Add '* ' prefix for the video to be played *next*.
-		i=0
-		while read -r line; do
-			if [ $i -eq "$(( pos + offset ))" ]; then
-				echo "* $line"
-			else
-				echo "$line"
-			fi
-			i=$(( i+1 ))
-		done < playlist | dmenu -l 20
+		toplay="$(
+			i=0
+			while read -r line; do
+				# Add '* ' prefix for the video to be played *next*.
+				if [ $i -eq "$(( pos + offset ))" ]; then
+					echo "$i) * $line"
+				else
+					echo "$i) $line"
+				fi
+				i=$(( i+1 ))
+			done < playlist | dmenu -l 20 | sed 's/\(^[[:digit:]]\+\)).\+/\1/'
+		)" || exit 0
+		if [ -n "$toplay" ]; then
+			do_play "$toplay"
+		fi
 		;;
 	playlist-update)
 		[ !-x mkplaylist ] && ERROR "Missing 'mkplaylist' file"
