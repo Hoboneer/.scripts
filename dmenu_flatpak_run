@@ -1,0 +1,6 @@
+#!/bin/sh
+# DESCRIPTION: Runner for flatpak applications using dmenu.
+# DEPENDENCIES: flatpak dmenu
+app="$(flatpak list --app --columns=description,application | tail +1 | dmenu -l 5 -p 'Run Flatpak App:' | awk -F'\t' '{print $NF}')" || exit 1
+[ -z "$app" ] && exit 1
+exec flatpak run "$app"
