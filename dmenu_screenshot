@@ -1,5 +1,6 @@
 #!/bin/sh
-# A screenshot utility using dmenu
+# DESCRIPTION: A screenshot utility using dmenu.
+# DEPENDENCIES: bspc(bspwm) maim mktemp notify-send sxiv xclip xdotool
 get_filename ()
 {
 	echo "$HOME/Pictures/screenshot-$(date +%Y-%m-%dT%H:%M:%S).png"
@@ -18,6 +19,18 @@ do_selection ()
 	maim --select
 }
 
+# Set up sxiv for viewing a file in floating mode.
+# NOTE: removes *all* simple bspwm rules for sxiv.
+sxiv_view_floating ()
+{
+	bspc rule -a 'Sxiv:*' state=floating
+	sxiv -p "$1" &
+	# We want sxiv to see the image before we do clean up, since
+	# "$1" might be the tempfile to be deleted soon.
+	sleep 2
+	bspc rule -r 'Sxiv:*'
+}
+
 options='
 window
 screen
@@ -26,6 +39,8 @@ selection
 dests='
 clipboard
 file
+fileview
+tempview
 '
 opt="$(echo "$options" | sed '1d; $d' | dmenu -i -p 'What kind of screenshot?')" || exit 1
 err=0
@@ -40,14 +55,22 @@ case "$opt" in
 					xclip -selection clipboard -target image/png < "$f"
 					notify-send -t 500 'Screenshot saved to clipboard'
 					;;
-				file)
+				# Save into file, optionally viewing it at the same time.
+				file|fileview)
 					realf="$(get_filename)"
 					if mv "$f" "$realf"; then
 						notify-send -t 2000 "Screenshot saved to '$realf'"
+						if [ "$dest" = fileview ]; then
+							sxiv_view_floating "$realf"
+						fi
 					else
 						notify-send -t 5000 -u critical "dmenu_screenshot: failed to save screenshot" "Tried to save to '$realf' but mv failed"
 						err=1
 					fi
+					;;
+				# View the screenshot without saving it.
+				tempview)
+					sxiv_view_floating "$f"
 					;;
 				*)
 					notify-send -t 5000 -u critical \
