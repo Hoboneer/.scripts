@@ -29,6 +29,21 @@ sxiv_view_floating ()
 	# "$1" might be the tempfile to be deleted soon.
 	sleep 2
 }
+# Cleans up tempfiles on exit.
+# Preserves exit status.
+# Handling signals (other than the EXIT pseudo-signal) result in exit code 2.
+clean_up ()
+{
+	case "$1" in
+		normal)		__clean_up_err="$?" ;;
+		error|*)	__clean_up_err=2 ;;
+	esac
+	shift
+	rm -f -- "$@"
+	# Reset EXIT trap and exit.
+	trap 0
+	exit "$__clean_up_err"
+}
 
 options='
 window
@@ -42,10 +57,11 @@ fileview
 tempview
 '
 opt="$(echo "$options" | sed '1d; $d' | dmenu -i -p 'What kind of screenshot?')" || exit 1
-err=0
 case "$opt" in
 	window|screen|selection)
 		f="$(mktemp)"
+		trap 'clean_up normal "$f"' EXIT
+		trap 'clean_up error "$f"' HUP INT QUIT TERM
 		cmd=do_$opt
 		dest="$(echo "$dests" | sed '1d; $d' | dmenu -i -p 'Save where?')" || exit 1
 		if $cmd > "$f"; then
@@ -64,7 +80,7 @@ case "$opt" in
 						fi
 					else
 						notify-send -t 5000 -u critical "dmenu_screenshot: failed to save screenshot" "Tried to save to '$realf' but mv failed"
-						err=1
+						exit 1
 					fi
 					;;
 				# View the screenshot without saving it.
@@ -75,19 +91,17 @@ case "$opt" in
 					notify-send -t 5000 -u critical \
 						"dmenu_screenshot: invalid destination" \
 						"Got '$dest' but should be one of '$(echo "$dests" | sed '1d; $d' | tr '\n' ' ' | sed 's/ $//')'"
-					err=1
+					exit 1
 					;;
 			esac
 		else
 			notify-send -t 5000 -u critical "dmenu_screenshot: maim failed or saving to tempfile failed"
-			err=1
+			exit 1
 		fi
-		rm -f "$f"
 		;;
 	*)
 		notify-send -t 5000 -u critical \
 			"dmenu_screenshot: invalid option" \
 			"Got '$opt' but should be one of '$(echo "$options" | sed '1d; $d' | tr '\n' ' ' | sed 's/ $//')'"
-		err=1 ;;
+		exit 1 ;;
 esac
-[ "$err" -ne 0 ] && exit "$err"
