@@ -23,12 +23,11 @@ do_selection ()
 # NOTE: removes *all* simple bspwm rules for sxiv.
 sxiv_view_floating ()
 {
-	bspc rule -a 'Sxiv:*' state=floating
+	bspc rule -a 'Sxiv:*' --one-shot state=floating
 	sxiv -p "$1" &
 	# We want sxiv to see the image before we do clean up, since
 	# "$1" might be the tempfile to be deleted soon.
 	sleep 2
-	bspc rule -r 'Sxiv:*'
 }
 
 options='
