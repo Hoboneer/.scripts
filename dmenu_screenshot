@@ -1,6 +1,6 @@
 #!/bin/sh
 # DESCRIPTION: A screenshot utility using dmenu.
-# DEPENDENCIES: bspc(bspwm) maim mktemp notify-send sxiv xclip xdotool
+# DEPENDENCIES: bspc(bspwm) identify(imagemagick) maim mktemp notify-send sxiv xclip xdotool xrandr
 get_filename ()
 {
 	echo "$HOME/Pictures/screenshot-$(date +%Y-%m-%dT%H:%M:%S).png"
@@ -20,10 +20,21 @@ do_selection ()
 }
 
 # Set up sxiv for viewing a file in floating mode.
-# NOTE: removes *all* simple bspwm rules for sxiv.
 sxiv_view_floating ()
 {
-	bspc rule -a 'Sxiv:*' --one-shot state=floating
+	# Ensure the sxiv window is fitted to the image size and is centred.
+	img_size="$(identify -format '%[width]x%[height]\n' "$1")"
+	rectangle="$(xrandr |
+		awk -v imgsize="$img_size" -v OFS=+ '
+			BEGIN {split(imgsize,IMG_DIMS,"x")}
+			/\*/ {
+				split($1,SCREEN_DIMS,"x");
+				x = int((SCREEN_DIMS[1] - IMG_DIMS[1]) / 2);
+				y = int((SCREEN_DIMS[2] - IMG_DIMS[2]) / 2);
+				print imgsize, x, y;
+				exit
+			}')"
+	bspc rule -a 'Sxiv:*' --one-shot state=floating rectangle="$rectangle"
 	sxiv -p "$1" &
 	# We want sxiv to see the image before we do clean up, since
 	# "$1" might be the tempfile to be deleted soon.
