@@ -35,7 +35,7 @@ sxiv_view_floating ()
 				exit
 			}')"
 	bspc rule -a 'Sxiv:*' --one-shot state=floating rectangle="$rectangle"
-	sxiv -p "$1" &
+	sxiv -b -p "$1" &
 	# We want sxiv to see the image before we do clean up, since
 	# "$1" might be the tempfile to be deleted soon.
 	sleep 2
