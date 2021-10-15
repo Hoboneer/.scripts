@@ -1,0 +1,7 @@
+#!/bin/sh
+# DESCRIPTION: dmenu script to switch to an open graphical program.
+# DEPENDENCIES: wmctrl
+
+wid="$(wmctrl -l -x | dmenu -l 20 -i -p 'Switch:' | awk '{print $1}')"
+[ -z "$wid" ] && exit
+exec wmctrl -i -a "$wid"
