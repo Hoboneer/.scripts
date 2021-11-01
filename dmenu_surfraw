@@ -106,7 +106,7 @@ opt=$(get_opt) || exit 1
 listargs=()
 while [[ $opt != $END_MANY_SELECT ]]; do
 	case "$opt" in
-		-add-*=)
+		-add-*=|-remove-*=)
 			# bash do-while loop: https://stackoverflow.com/a/24421013
 			while
 				arg=$(get_optarg "$opt" "--${END_MANY_SELECT}--") ||
