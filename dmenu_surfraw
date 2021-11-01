@@ -63,7 +63,9 @@ get_arg ()
 {
 	local prompt
 	prompt="$1"
-	{ echo "--${END_MANY_SELECT}--"; surfraw "$elvis" -complete-arg=; } | dmenu -p "$prompt"
+	# Strip (double) quotes from completions
+	# Quotes should only have been emitted for completions with embedded whitespace
+	{ echo "--${END_MANY_SELECT}--"; surfraw "$elvis" -complete-arg= | sed 's/^"\([^"]*\)"$/\1/'; } | dmenu -p "$prompt"
 }
 ARGS=()
 if ! [[ "$IS_BOOKMARK" == yes && "$DO_SKIP_BOOKMARK_TERMS" == yes ]]; then
