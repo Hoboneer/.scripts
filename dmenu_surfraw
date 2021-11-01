@@ -115,6 +115,7 @@ while [[ $opt != $END_MANY_SELECT ]]; do
 				[[ $arg != "--${END_MANY_SELECT}--" ]]
 			do	listargs+=("$arg"); done
 			IFS=','; OPTIONS+=("$opt${listargs[*]}"); IFS=$' \t\n'
+			listargs=()
 			;;
 		-*=)
 			arg=$(get_optarg "$opt") || { opt=$(get_opt) && continue || exit 1; }
