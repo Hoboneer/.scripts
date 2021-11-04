@@ -69,7 +69,7 @@ get_arg ()
 	prompt="$1"
 	# Strip (double) quotes from completions
 	# Quotes should only have been emitted for completions with embedded whitespace
-	{ echo "--${END_MANY_SELECT}--"; surfraw "$elvis" -complete-arg= | sed 's/^"\([^"]*\)"$/\1/'; } | dmenu -p "$prompt"
+	{ echo "--${END_MANY_SELECT}--"; surfraw "$elvis" -complete-arg= | sed 's/^"\([^"]*\)"$/\1/'; } | dmenu -p "$elvis: $prompt"
 }
 ARGS=()
 if ! [[ "$IS_BOOKMARK" == yes && "$DO_SKIP_BOOKMARK_TERMS" == yes ]]; then
@@ -98,13 +98,13 @@ get_opt ()
 	{ echo "$END_MANY_SELECT"; surfraw "$elvis" -complete=-; } |
 		sed -e 's/^ //g' -e 's/ $//g' |
 		tr ' ' '\n' |
-		dmenu -p 'Option?'
+		dmenu -p "$elvis: Option?"
 }
 get_optarg ()
 {
 	local opt endsentinel
 	opt="$1" endsentinel="$2"
-	{ [ -n "$endsentinel" ] && echo "$endsentinel"; surfraw "$elvis" -complete="$opt"; } | tr ' ' '\n' | dmenu -p "Arg to '$opt'?"
+	{ [ -n "$endsentinel" ] && echo "$endsentinel"; surfraw "$elvis" -complete="$opt"; } | tr ' ' '\n' | dmenu -p "$elvis: Arg to '$opt'?"
 }
 
 if [[ "$DO_SKIP_OPTIONS" != yes ]]; then
