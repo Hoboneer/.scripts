@@ -1,0 +1,11 @@
+#!/bin/sh
+# DESCRIPTION: Copy an emoji into the clipboard
+# DEPENDENCIES: dmenu xclip
+dnl To be processed by m4.
+emoji="$(cat <<'EOF_emojis' | dmenu -i -l 20 -fn Monospace-18 -p 'Emoji:' | cut -d'	' -f1
+include(`splatmoji-emojidata/data/tsv/en.tsv')dnl
+EOF_emojis
+)"
+[ -z "$emoji" ] && exit
+printf '%s\n' "$emoji" | xclip -rmlastnl -selection clipboard -i
+notify-send -t 3000 "$emoji copied to clipboard."

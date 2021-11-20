@@ -1,0 +1,3 @@
+[submodule "splatmoji-emojidata"]
+	path = splatmoji-emojidata
+	url = https://github.com/cspeterson/splatmoji-emojidata
