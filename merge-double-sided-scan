@@ -1,9 +1,5 @@
-#!/bin/bash
+#!/bin/sh
 # Merge two PDFs (one for each side) to look like it was a double-sided scan.
-set -eu
-set -o errexit
-set -o pipefail
-
 usage ()
 {
 	cat <<'EOF'
@@ -21,30 +17,39 @@ esac
 
 [ -z "$1" ] && { echo "first file argument missing" >&2; exit 1; }
 [ -z "$2" ] && { echo "second file argument missing" >&2; exit 1; }
+f1="$1"
+f2="$2"
 
-page_count_f1="$(pdfinfo "$1" | grep '^Pages:' | awk '{print $2}')" || { echo "'$1' is an invalid PDF file" >&2; exit 1; }
-page_count_f2="$(pdfinfo "$2" | grep '^Pages:' | awk '{print $2}')" || { echo "'$2' is an invalid PDF file" >&2; exit 1; }
-if [ "$page_count_f1" -lt "$page_count_f2" ] || [ "$(( page_count_f1 - page_count_f2 ))" -gt 1 ]; then
+page_count_f1="$(pdfinfo "$1" | awk '/^Pages:/ {print $2}')"
+page_count_f2="$(pdfinfo "$2" | awk '/^Pages:/ {print $2}')"
+if [ -z "$page_count_f1" ]; then
+	echo "'$f1' is an invalid PDF file" >&2
+	exit 1
+elif [ -z "$page_count_f2" ]; then
+	echo "'$f2' is an invalid PDF file" >&2
+	exit 1
+elif [ "$page_count_f1" -lt "$page_count_f2" ] || [ "$(( page_count_f1 - page_count_f2 ))" -gt 1 ]; then
 	echo "page count of first file must be equal to or just one greater than the page count of second file" >&2
 	exit 1
 fi
 
-cmd_line=()
+# Reuse the array variable for mutool's command line
+set --
 currpage_f1=1
 currpage_f2=1
 nextfile=1
-until [ $currpage_f1 -gt $page_count_f1 ] && [ $currpage_f2 -gt $page_count_f2 ]; do
+until [ "$currpage_f1" -gt "$page_count_f1" ] && [ "$currpage_f2" -gt "$page_count_f2" ]; do
 	case $nextfile in
 		1)
-			cmd_line+=("$1" $currpage_f1)
+			set -- "$@" "$f1" "$currpage_f1"
 			currpage_f1="$(( currpage_f1 + 1 ))"
 			nextfile=2
 			;;
 		2)
-			cmd_line+=("$2" $currpage_f2)
+			set -- "$@" "$f2" "$currpage_f2"
 			currpage_f2="$(( currpage_f2 + 1 ))"
 			nextfile=1
 			;;
 	esac
 done
-mutool merge "${cmd_line[@]}"
+mutool merge "$@"
