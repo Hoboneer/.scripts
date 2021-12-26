@@ -1,6 +1,8 @@
 #!/bin/sh
 option="$(cat <<EOF | dmenu -i -p 'What power operation?'
 logout
+suspend
+hibernate
 shutdown
 restart
 EOF
@@ -13,6 +15,14 @@ case "$option" in
 	logout)
 		notify-send -t 5000 -u critical 'Logging out...'
 		bspc quit
+		;;
+	suspend)
+		notify-send -t 5000 -u critical 'Suspending to RAM...'
+		systemctl suspend
+		;;
+	hibernate)
+		notify-send -t 5000 -u critical 'Suspending to disk...'
+		systemctl hibernate
 		;;
 	shutdown)
 		notify-send -t 5000 -u critical 'Shutting down...'
