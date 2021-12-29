@@ -1,0 +1,40 @@
+#!/bin/sh
+# DESCRIPTION: Get current bspwm layout, node state, node flags, and monitor as they change
+# DEPENDENCIES: bspc jq
+get_values ()
+{
+	bspc wm -d |
+	jq -r '
+		.focusedMonitorId as $monid | .monitors[] | select(.id == $monid) | .name as $monitor |
+		.focusedDesktopId as $deskid | .desktops[] | select(.id == $deskid) |
+		.focusedNodeId as $nodeid |
+		.layout as $layout |
+		if $nodeid == 0		# no node focussed, so no node state or flags
+		then	"layout: " + $layout + ", monitor: " + $monitor
+		else
+			.root |
+			recurse(.firstChild, .secondChild) |
+			if .id == $nodeid
+			then
+				.client.state as $state |
+				{sticky: .sticky, private: .private, locked: .locked, marked: .marked} |
+				["layout: " + $layout
+				,"state: " + $state
+				,"flags: " + (to_entries | map(select(.value) | .key) | join(","))
+				,"monitor: " + $monitor
+				] | join(", ")
+			else
+				empty
+			end
+		end'
+}
+# Do it once immediately for initial values.
+get_values
+bspc subscribe node desktop |
+	while read cmd arg; do
+		case $cmd in
+			node_focus|desktop_focus | node_remove|node_swap|node_transfer | node_state|node_flag|desktop_layout)
+				get_values
+				;;
+		esac
+	done
