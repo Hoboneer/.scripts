@@ -1,0 +1,42 @@
+#!/bin/sh
+# DESCRIPTION: chord watcher for sxhkd to use in indicating mode in wm
+# DEPENDENCIES: notify-send
+# NOTE: Only one instance should be open at once since only one can read from the named pipe.
+
+fifo="${SXHKD_FIFO:-$XDG_RUNTIME_DIR/sxhkd/status.fifo}"
+
+MODE_RESIZE='mod4 + r'
+MODE_MOVE_FLOATING='mod4 + shift + f'
+
+first_seen=1 # can't seem to rely on sequencing of B* and H* for chords
+echo normal
+while IFS= read line; do
+	case "$line" in
+		B*)
+			# Might already be in a named mode (as above), so only say "in-chain" if not in a specific mode
+			[ "$first_seen" = 1 ] && echo in-chain
+			;;
+		# Complete or time-out of chord chain
+		E*|T*)
+			first_seen=1
+			echo normal
+			;;
+		# These chain keybinds are unable to conflict with non-chains
+		?"$MODE_RESIZE"*|?"$MODE_MOVE_FLOATING"*)
+			if [ "$first_seen" = 1 ]; then
+				first_seen=0
+				case "$line" in
+					?"$MODE_RESIZE"*) mode=resize ;;
+					?"$MODE_MOVE_FLOATING"*) mode=move_floating ;;
+				esac
+				# Alert colour from polybar.
+				# TODO: sync them
+				echo "%{F#bd2c40}$mode%{F-}"
+			fi
+			;;
+		# TODO: do something with commands (C*).
+		C*|*)   :
+			;;
+	esac
+done < "$fifo"
+notify-send -t 1000 -u "watch_sxhkd" "Read entire fifo.  Quitting..."
