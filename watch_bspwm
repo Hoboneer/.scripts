@@ -10,7 +10,7 @@ get_values ()
 		.focusedNodeId as $nodeid |
 		.layout as $layout |
 		if $nodeid == 0		# no node focussed, so no node state or flags
-		then	"layout: " + $layout + ", monitor: " + $monitor
+		then	"L: " + $layout + ", M: " + $monitor
 		else
 			.root |
 			recurse(.firstChild, .secondChild) |
@@ -18,10 +18,10 @@ get_values ()
 			then
 				.client.state as $state |
 				{sticky: .sticky, private: .private, locked: .locked, marked: .marked} |
-				["layout: " + $layout
-				,"state: " + $state
-				,"flags: " + (to_entries | map(select(.value) | .key) | join(","))
-				,"monitor: " + $monitor
+				["L: " + $layout
+				,"S: " + $state
+				,"F: " + (to_entries | map(select(.value) | .key) | join(","))
+				,"M: " + $monitor
 				] | join(", ")
 			else
 				empty
