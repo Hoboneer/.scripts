@@ -8,7 +8,7 @@ restart
 EOF
 )" || exit 1
 
-sure="$(printf 'no\nyes\n' | dmenu -i -p 'Are you sure?')" || exit 1
+sure="$(printf 'no\nyes\n' | dmenu -i -p "$option: Are you sure?")" || exit 1
 [ "$sure" != yes ] && exit 1
 
 case "$option" in
