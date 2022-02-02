@@ -1,6 +1,6 @@
 #!/bin/sh
 # DESCRIPTION: A screenshot utility using dmenu.
-# DEPENDENCIES: bspc(bspwm) identify(imagemagick) maim mktemp notify-send sxiv xclip xdotool xrandr
+# DEPENDENCIES: bspc(bspwm) identify(imagemagick) jq maim mktemp notify-send sxiv xclip xdotool xrandr
 get_filename ()
 {
 	echo "$HOME/Pictures/screenshot-$(date +%Y-%m-%dT%H:%M:%S).png"
@@ -13,6 +13,11 @@ do_window ()
 do_screen ()
 {
 	maim
+}
+do_monitor ()
+{
+	monitor="$(bspc wm -d | jq -r '.monitors[].name' | dmenu -l 20 -p "Which monitor?")" || exit
+	maim -g "$(getmonitordims "$monitor")"
 }
 do_selection ()
 {
@@ -59,6 +64,7 @@ clean_up ()
 options='
 window
 screen
+monitor
 selection
 '
 dests='
@@ -69,7 +75,7 @@ tempview
 '
 opt="$(echo "$options" | sed '1d; $d' | dmenu -i -p 'What kind of screenshot?')" || exit 1
 case "$opt" in
-	window|screen|selection)
+	window|screen|monitor|selection)
 		f="$(mktemp)"
 		trap 'clean_up normal "$f"' EXIT
 		trap 'clean_up error "$f"' HUP INT QUIT TERM
