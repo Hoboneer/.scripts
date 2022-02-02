@@ -1,0 +1,4 @@
+#!/bin/sh
+# DESCRIPTION: Utility to get the geometry of the given bspwm monitor
+# DEPENDENCIES: bspc(bspwm) jq
+bspc query -T -m "$1" | jq -r '.rectangle | "\(.width)x\(.height)+\(.x)+\(.y)"'

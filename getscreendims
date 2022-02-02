@@ -1,0 +1,4 @@
+#!/bin/sh
+# DESCRIPTION: Utility to get the geometry of the X11 screen (distinct from physical displays)
+# DEPENDENCIES: xwininfo
+xwininfo -root | awk '/-geometry/ {print $2}'
