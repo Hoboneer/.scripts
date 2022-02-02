@@ -1,6 +1,6 @@
 #!/bin/sh
 # DESCRIPTION: A screenshot utility using dmenu.
-# DEPENDENCIES: bspc(bspwm) identify(imagemagick) jq maim mktemp notify-send sxiv xclip xdotool xrandr
+# DEPENDENCIES: bspc(bspwm) dmenu identify(imagemagick) jq maim mktemp notify-send sxiv xclip xdotool xrandr
 get_filename ()
 {
 	echo "$HOME/Pictures/screenshot-$(date +%Y-%m-%dT%H:%M:%S).png"
