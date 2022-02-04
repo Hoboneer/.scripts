@@ -1,0 +1,24 @@
+#!/bin/sh
+# DESCRIPTION: Place mouse pointer at centre of window if one is focused, otherwise in the centre of the screen
+# DEPENDENCIES: bspc(bspwm) jq xdotool
+bspc query -T -m focused |
+	jq -r '	.focusedDesktopId as $deskid | .rectangle as $screenrect | .padding as $screenpadding |
+		.desktops[] | select(.id == $deskid) |
+		if .focusedNodeId == 0
+		then $screenrect |
+		     [.x + (.width/2) + $screenpadding.top - $screenpadding.bottom, .y + (.height/2) + $screenpadding.left - $screenpadding.right] | @tsv
+		else .focusedNodeId
+		end' |
+	{
+		read f1 f2
+		# the result isn't super exact, but it's good enough
+		if [ -n "$f2" ]; then
+			# no focused window
+			x="$f1"; y="$f2"
+			xdotool mousemove "$x" "$y"
+		else
+			# xdotool places it in the centre of the focused window when using --polar
+			wid="$f1"
+			xdotool mousemove --window "$wid" --polar 0 0
+		fi
+	}
