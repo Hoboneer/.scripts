@@ -6,11 +6,11 @@ get_values ()
 	bspc wm -d |
 	jq -r '
 		.focusedMonitorId as $monid | .monitors[] | select(.id == $monid) | .name as $monitor |
-		.focusedDesktopId as $deskid | .desktops[] | select(.id == $deskid) |
+		.focusedDesktopId as $deskid | .desktops[] | select(.id == $deskid) | .name as $desktop |
 		.focusedNodeId as $nodeid |
 		.layout as $layout |
 		if $nodeid == 0		# no node focussed, so no node state or flags
-		then	"L: " + $layout + ", M: " + $monitor
+		then	"L: " + $layout + ", D: " + $desktop + ", M: " + $monitor
 		else
 			.root |
 			recurse(.firstChild, .secondChild) |
@@ -21,6 +21,7 @@ get_values ()
 				["L: " + $layout
 				,"S: " + $state
 				,"F: " + (to_entries | map(select(.value) | .key) | join(","))
+				,"D: " + $desktop
 				,"M: " + $monitor
 				] | join(", ")
 			else
