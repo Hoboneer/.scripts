@@ -6,6 +6,7 @@
 
 # In minutes; 1 hour default.
 WATCH_INTERVAL="$(( ${WATCH_INTERVAL:-60} * 60 ))"
+WTTR_LOCATION=Auckland
 
 do_header ()
 {
@@ -14,8 +15,8 @@ do_header ()
 }
 
 do_header
-curl --silent --show-error wttr.in
+curl --silent --show-error wttr.in/"$WTTR_LOCATION"
 while sleep "$WATCH_INTERVAL"; do
 	do_header
-	curl --silent --show-error wttr.in
+	curl --silent --show-error wttr.in/"$WTTR_LOCATION"
 done
