@@ -1,0 +1,23 @@
+#!/bin/sh
+# DESCRIPTION: Distribute monitors for bspwm, one per external monitor, the rest with the primary
+# DEPENDENCIES: bspc(bspwm) jq notify-send
+
+# Each non-primary monitor should have one desktop, starting from X downwards, and the primary monitor should have the rest.
+num_mons="$(bspc query -M | wc -l)"
+set -- I II III IV V VI VII VIII IX X
+if [ "$num_mons" -gt "$#" ]; then
+	notify-send -t 10000 -u critical "bspwmrc" "Number of monitors exceeds number of desktops. Not using $(( num_mons - $# )) monitors"
+fi
+num_nonprimary_mons="$(( num_mons - 1 ))"
+primary_monitor_desktops=''
+while [ "$#" -gt "$num_nonprimary_mons" ]; do
+	primary_monitor_desktops="$primary_monitor_desktops $1"
+	shift
+done
+bspc monitor primary -d $primary_monitor_desktops
+bspc wm -d |
+	jq -r '.primaryMonitorId as $pmonid | .monitors[] | select(.id != $pmonid) | .id ' |
+	while IFS= read mon && [ "$#" -gt 0 ]; do
+		bspc monitor "$mon" -d "$1"
+		shift
+	done
