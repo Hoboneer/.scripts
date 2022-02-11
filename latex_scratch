@@ -1,0 +1,59 @@
+#!/bin/sh
+# DESCRIPTION: edit the latex file with auto-compilation
+# DEPENDENCIES: bspc(bspwm) gvim mktemp wmctrl zathura
+DIR="$(mktemp -d tmp.latex.XXXXXXXXXXX --tmpdir)" || exit 1
+cat <<'EOF' > "$DIR/Makefile"
+.PHONY: all
+all: in.pdf
+
+in.pdf: in.tex
+	pdflatex -interaction nonstopmode $<
+EOF
+cat <<'EOF' > "$DIR/in.tex"
+\documentclass{article}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{siunitx}
+\usepackage{commath}
+
+\begin{document}
+
+\null
+
+\end{document}
+EOF
+(cd "$DIR" && make all)
+
+bspc rule -a Gvim -o state=tiled
+bspc rule -a Zathura -o state=tiled
+this=$$
+
+GVIM_WIDFILE="$DIR/gvim.wid"
+{
+	gvim --nofork "$DIR/in.tex" &
+	gvim_pid=$!
+	sleep 1
+	wmctrl -lp | awk '$3 == '$gvim_pid' {print $1; exit}' >"$GVIM_WIDFILE"
+	wait $gvim_pid
+	# It shouldn't matter whether this thing executes without error since we're all done anyway (unless race conditions?)
+	kill -s USR1 "$this" 2>/dev/null
+} &
+
+{
+	zathura "$DIR/in.pdf"
+	# It shouldn't matter whether this thing executes without error since we're all done anyway (unless race conditions?)
+	kill -s USR2 "$this" 2>/dev/null
+} &
+
+echo "$DIR/in.tex" | entr -p make -f "$DIR/Makefile" all &
+entr_pid=$!
+
+gvim_alive=1
+pdf_alive=1
+entr_alive=1
+
+# gvim closed
+trap 'gvim_alive=0; kill $entr_pid; entr_alive=0' USR1
+# pdf viewer closed
+trap 'pdf_alive=0; if [ $entr_alive = 1 ]; then kill $entr_pid; entr_alive=0; fi; if [ $gvim_alive = 1 ]; then wmctrl -i -c "$(cat "$GVIM_WIDFILE")"; gvim_alive=0; fi' USR2
+trap 'rm -f -- "$GVIM_WIDFILE"' EXIT
+wait
