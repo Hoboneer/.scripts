@@ -1,41 +1,131 @@
-#!/bin/sh
-# DESCRIPTION: Get current bspwm layout, node state, node flags, and monitor as they change
-# DEPENDENCIES: bspc jq
-get_values ()
-{
-	bspc wm -d |
-	jq -r '
-		.focusedMonitorId as $monid | .monitors[] | select(.id == $monid) | .name as $monitor |
-		.focusedDesktopId as $deskid | .desktops[] | select(.id == $deskid) | .name as $desktop |
-		.focusedNodeId as $nodeid |
-		.layout as $layout |
-		if $nodeid == 0		# no node focussed, so no node state or flags
-		then	"L: " + $layout + ", D: " + $desktop + ", M: " + $monitor
-		else
-			.root |
-			recurse(.firstChild, .secondChild) |
-			if .id == $nodeid
-			then
-				.client.state as $state |
-				{sticky: .sticky, private: .private, locked: .locked, marked: .marked} |
-				["L: " + $layout
-				,"S: " + $state
-				,"F: " + (to_entries | map(select(.value) | .key) | join(","))
-				,"D: " + $desktop
-				,"M: " + $monitor
-				] | join(", ")
-			else
-				empty
-			end
-		end'
-}
-# Do it once immediately for initial values.
-get_values
-bspc subscribe node desktop |
-	while read cmd arg; do
-		case $cmd in
-			node_focus|desktop_focus | node_remove|node_swap|node_transfer | node_state|node_flag|desktop_layout)
-				get_values
-				;;
-		esac
+#!/bin/bash
+# DESCRIPTION: Get and format output of `bspc subscribe report` for status bar as each report comes
+# DEPENDENCIES: bspc(bspwm)
+# Colors (US spelling... oh well) taken from polybar config.
+COLOR_BACKGROUND=#222
+COLOR_BACKGROUND_ALT=#444
+COLOR_FOREGROUND=#dfdfdf
+COLOR_FOREGROUND_ALT=#555
+COLOR_PRIMARY=#ffb52a
+COLOR_SECONDARY=#e60053
+COLOR_ALERT=#bd2c40
+# TODO: get underline to work
+
+bspc subscribe report |
+	while IFS= read -r report; do
+		echo "${report#$(bspc config status_prefix)}" | tr ':' '\n' |
+			{
+				desktop_texts=()
+				print_state ()
+				{
+					# use third font since we want color emojis
+					paren_text="(%{T3}$desk_layout%{T-}"
+					# non-empty if there are any nodes in the current desktop
+					if [ -n "$node_state" ]; then
+						paren_text="$paren_text|%{T3}$node_state%{T-}"
+						paren_text="$paren_text|%{T3}$(for flag in "${node_flags[@]}"; do printf '%s' "$flag"; done | sed 's/,$//')%{T-}"
+						paren_text="$paren_text):"
+					else
+						# reduce workspace movement due to lack of node state and node flags
+						paren_text="$paren_text):      "
+					fi
+					printf '%s    ' "$montext$paren_text$(for desktext in "${desktop_texts[@]}"; do printf '%s' "$desktext"; done)"
+					#notify-send 'bspwm_bar' "$(printf '%s  ' "$montext($paren_text): $(for desktext in "${desktop_texts[@]}"; do printf '%s  ' "$desktext"; done)")"
+				}
+				while IFS= read -r item; do
+					case $item in
+						# New monitor!
+						[Mm]*)
+							[ -n "$montext" ] && print_state
+
+							desktop_texts=()
+							node_state=''
+							node_flags=''
+
+							monitor="${item#?}";
+							montype="${item%$monitor}"
+							case $montype in
+								M) montext="%{B$COLOR_BACKGROUND_ALT}%{u$COLOR_PRIMARY} $monitor %{u-}%{B-}" ;;
+								m) montext="%{F$COLOR_FOREGROUND_ALT} $monitor %{F-}" ;;
+							esac
+							;;
+						[OoFfUu]*)
+							desktop="${item#?}"
+							desktype="${item%$desktop}"
+
+							case $desktype in
+								[OFU])	#textcolor="$COLOR_FOREGROUND"
+									textcolor=''
+									case "$item" in (U*) notify-send -u bspwm_panel 'Got a focused urgent desktop!' ;; esac
+									bgcolor="$COLOR_BACKGROUND_ALT"
+									ulcolor="$COLOR_PRIMARY"
+									;;
+								o)	textcolor=''
+									bgcolor=''
+									ulcolor=''
+									;;
+								f)	textcolor="$COLOR_FOREGROUND_ALT"
+									bgcolor=''
+									ulcolor=''
+									;;
+								u)	textcolor=''
+									bgcolor="$COLOR_ALERT"
+									ulcolor=''
+									;;
+							esac
+							curr=" $desktop "
+							[ -n "$textcolor" ] && curr="%{F$textcolor}$curr%{F-}"
+							[ -n "$bgcolor" ] && curr="%{B$bgcolor}$curr%{B-}"
+							# NOTE: polybar uses 'u' and 'o' tags for underline and overline
+							[ -n "$ulcolor" ] && curr="%{u$ulcolor}$curr%{u-}"
+							desktop_texts+=( "$curr" )
+
+							textcolor=''
+							bgcolor=''
+							ulcolor=''
+							;;
+						L?)	desk_layout="${item#?}"
+							case $desk_layout in
+								T) desk_layout=🧱 ;;	# tiled
+								M) desk_layout=🔍 ;;	# monocle
+								?) desk_layout=❓️ ;;	# unknown
+							esac
+							;;
+						T?)	node_state="${item#?}"
+							case $node_state in
+								T) node_state=🧱 ;;	# tiled
+								P) node_state=🧱❗️ ;;	# pseudo tiled
+								F) node_state=🎈 ;;	# floating
+								=) node_state=📺️ ;;	# fullscreen
+								@) node_state=🌳 ;;	# "parent" (not a real state, but selecting an internal node)
+								?) node_state=❓️ ;;	# unknown
+							esac
+							;;
+						G*)	flags="${item#?}"
+							node_flags=()
+							if [ -n "$flags" ]; then
+								case $flags in (*M*) node_flags+=( 🎯 ) ;; esac		# marked
+								case $flags in (*L*) node_flags+=( 🔒️ ) ;; esac		# locked
+								case $flags in (*S*) node_flags+=( 🍯 ) ;; esac		# sticky (because honey is sticky?)
+								case $flags in (*P*) node_flags+=( 📕 ) ;; esac		# private (because books are private? idk)
+								if [ "${#node_flags[@]}" -eq 0 ]; then
+									node_flags+=( ❓️ )				# unknown
+								fi
+							fi
+							;;
+					esac
+				done
+				[ -n "$montext" ] && print_state
+			}
+		echo
+	done |
+	{
+	old=''
+	while IFS= read -r output; do
+		# Avoid duplicate updates.
+		if [ "$output" != "$old" ]; then
+			echo "$output"
+			old="$output"
+		fi
 	done
+	}
