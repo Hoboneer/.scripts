@@ -32,7 +32,7 @@ do_play ()
 		pos="$(cat progress 2>/dev/null || { echo 0 | tee progress; })"
 	fi
 	offset="$(cat playlist-offset 2>/dev/null || echo 0)"
-	exec mpv --playlist=playlist --playlist-start="$(( pos + offset ))"
+	mpv --playlist=playlist --playlist-start="$(( pos + offset ))"
 }
 
 series="$(find "$seriesdir" -maxdepth 1 -type d -o -type l | sort | grep -vFx "$seriesdir" | xargs -n1 basename | dmenu -i -p 'Which series?')" || exit 1
@@ -48,56 +48,57 @@ dec-pos
 playlist-view
 playlist-update
 '
-option="$(echo "$options" | dmenu -i -p 'What to do?')" || exit 1
-case "$option" in
-	watch)
-		missing=''
-		for f in progress playlist; do
-			[ ! -r "$f" ] && missing="$missing $(basename "$f")"
-		done
-		[ -n "$missing" ] && ERROR "Missing files needed to play $series:$missing"
+while option="$(echo "$options" | dmenu -i -p 'What to do?')"; do #|| exit 1
+	case "$option" in
+		watch)
+			missing=''
+			for f in progress playlist; do
+				[ ! -r "$f" ] && missing="$missing $(basename "$f")"
+			done
+			[ -n "$missing" ] && ERROR "Missing files needed to play $series:$missing"
 
-		do_play
-		;;
-	fetch|comments|tracker)	# get new episode manually | view comments | update tracker manually
-		[ ! -x "$option" ] && ERROR "Missing '$option' script"
-		exec ./$option
-		;;
-	inc-pos)
-		pos="$(cat progress 2>/dev/null || echo 0)"
-		pos="$(( pos + 1 ))" 
-		check_sure && echo "$pos" > progress && INFO "Incremented $series position to $pos"
-		;;
-	dec-pos)
-		pos="$(cat progress 2>/dev/null)" || ERROR "Can't decrement position in $series because 'progress' file doesn't exist"
-		[ "$pos" -eq 0 ] && ERROR "Can't decrement from 0"
-		pos="$(( pos - 1 ))" 
-		check_sure && echo "$pos" > progress && INFO "Decremented $series position to $pos"
-		;;
-	playlist-view)	# view playlist
-		[ ! -r playlist ] && ERROR "Missing 'playlist' file"
-		pos="$(cat progress 2>/dev/null || echo 0)"
-		offset="$(cat playlist-offset 2>/dev/null || echo 0)"
-		toplay="$(
-			# Start indices from the right position based on the offset.
-			i="$(( 0 - offset + 1 ))"
-			while read -r line; do
-				# Add '* ' prefix for the video to be played *next*.
-				if [ "$i" -eq "$(( pos + 1 ))" ]; then
-					echo "$i) * $line"
-				else
-					echo "$i) $line"
-				fi
-				i=$(( i+1 ))
-			done < playlist | dmenu -l 20 | sed 's/\(^[[:digit:]]\+\)).\+/\1/'
-		)" || exit 0
-		if [ -n "$toplay" ]; then
-			do_play "$(( toplay - 1 ))"
-		fi
-		;;
-	playlist-update)
-		[ ! -x mkplaylist ] && ERROR "Missing 'mkplaylist' file"
-		./mkplaylist && INFO "Updated playlist for $series"
-		;;
+			do_play
+			;;
+		fetch|comments|tracker)	# get new episode manually | view comments | update tracker manually
+			[ ! -x "$option" ] && ERROR "Missing '$option' script"
+			exec ./$option
+			;;
+		inc-pos)
+			pos="$(cat progress 2>/dev/null || echo 0)"
+			pos="$(( pos + 1 ))"
+			check_sure && echo "$pos" > progress && INFO "Incremented $series position to $pos"
+			;;
+		dec-pos)
+			pos="$(cat progress 2>/dev/null)" || ERROR "Can't decrement position in $series because 'progress' file doesn't exist"
+			[ "$pos" -eq 0 ] && ERROR "Can't decrement from 0"
+			pos="$(( pos - 1 ))"
+			check_sure && echo "$pos" > progress && INFO "Decremented $series position to $pos"
+			;;
+		playlist-view)	# view playlist
+			[ ! -r playlist ] && ERROR "Missing 'playlist' file"
+			pos="$(cat progress 2>/dev/null || echo 0)"
+			offset="$(cat playlist-offset 2>/dev/null || echo 0)"
+			toplay="$(
+				# Start indices from the right position based on the offset.
+				i="$(( 0 - offset + 1 ))"
+				while read -r line; do
+					# Add '* ' prefix for the video to be played *next*.
+					if [ "$i" -eq "$(( pos + 1 ))" ]; then
+						echo "$i) * $line"
+					else
+						echo "$i) $line"
+					fi
+					i=$(( i+1 ))
+				done < playlist | dmenu -l 20 | sed 's/\(^[[:digit:]]\+\)).\+/\1/'
+			)" || exit 0
+			if [ -n "$toplay" ]; then
+				do_play "$(( toplay - 1 ))"
+			fi
+			;;
+		playlist-update)
+			[ ! -x mkplaylist ] && ERROR "Missing 'mkplaylist' file"
+			./mkplaylist && INFO "Updated playlist for $series"
+			;;
 
-esac
+	esac
+done
