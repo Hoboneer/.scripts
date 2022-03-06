@@ -1,0 +1,39 @@
+#!/bin/bash
+# DESCRIPTION: Bubble current bspwm monitor left and right.
+# DEPENDENCIES: bspc(bspwm)
+case $1 in
+	left)	dir=$1 ;;
+	right)	dir=$1 ;;
+	*)	echo "unknown direction '$1': must be 'left' or 'right'" >&2; exit 1 ;;
+esac
+currmon="$(bspc query -M -m --names)"
+readarray -t mons < <(bspc query -M --names)
+[ "${#mons[@]}" -eq 1 ] && exit
+i=0
+for mon in "${mons[@]}"; do
+	if [ "$mon" = "$currmon" ]; then
+		# swap
+		case $dir in
+			left)
+				if [ "$i" -eq 0 ]; then
+					j=$(( ${#mons[@]} - 1 ))
+				else
+					j=$(( i - 1 ))
+				fi
+				;;
+			right)
+				if [ "$i" -eq "$(( ${#mons[@]} - 1 ))" ]; then
+					j=0
+				else
+					j=$(( i + 1 ))
+				fi
+				;;
+		esac
+		temp="${mons[$j]}"
+		mons[$j]="${mons[$i]}"
+		mons[$i]="$temp"
+		break
+	fi
+	i=$(( i + 1 ))
+done
+bspc wm -O "${mons[@]}"
