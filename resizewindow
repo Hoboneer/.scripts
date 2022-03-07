@@ -1,0 +1,65 @@
+#!/bin/sh
+# USAGE: resizewindow ACTION DIRECTION PX
+# DESCRIPTION: Expand and contract the window in the given direction (sides and corners) by a given step size in pixels.
+# DEPENDENCIES: bspc(bspwm)
+case $1 in
+	expand|contract) action=$1; shift ;;
+	*) echo "unknown action '$1': must be 'expand' or 'contract'" >&2; exit 1 ;;
+esac
+case $1 in
+	left|bottom|top|right|top_left|top_right|bottom_left|bottom_right)
+		dir=$1; shift ;;
+	*)
+		echo "unknown direction '$1': must be one of 'left,bottom,top,right,top_left,top_right,bottom_left,bottom_right'" >&2; exit 1 ;;
+esac
+case $1 in
+	-*)
+		case ${1#-} in
+			*[!0-9]*)
+				echo "non-integer used px argument '$1': it must be an integer" >&2
+				exit 1
+				;;
+			*)	px=$1; shift ;;
+		esac
+		;;
+	*[!0-9]*)
+		echo "non-integer used px argument '$1': it must be an integer" >&2
+		exit 1
+		;;
+	*)	px=$1; shift ;;
+esac
+
+# Deltas for expanding.
+case $dir in
+	left)		dx=$(( -px ));	dy=0 ;;
+	right)		dx=$px;		dy=0 ;;
+
+	bottom)		dx=0;		dy=$px ;;
+	top)		dx=0;		dy=$(( -px )) ;;
+
+	top_left)	dx=$(( -px ));	dy=$(( -px )) ;;
+	bottom_right)	dx=$px;		dy=$px ;;
+
+	top_right)	dx=$px;		dy=$(( -px )) ;;
+	bottom_left)	dx=$(( -px ));	dy=$px ;;
+esac
+
+case $action in
+	contract)
+		case $dir in
+			left)		dir=right ;;
+			right)		dir=left ;;
+
+			bottom)		dir=top ;;
+			top)		dir=bottom ;;
+
+			top_left)	dir=bottom_right ;;
+			bottom_right)	dir=top_left ;;
+
+			top_right)	dir=bottom_left ;;
+			bottom_left)	dir=top_right ;;
+		esac
+		;;
+esac
+
+bspc node -z $dir $dx $dy
