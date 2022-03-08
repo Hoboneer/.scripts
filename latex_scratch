@@ -44,7 +44,7 @@ GVIM_WIDFILE="$DIR/gvim.wid"
 	kill -s USR2 "$this" 2>/dev/null
 } &
 
-echo "$DIR/in.tex" | entr -p make -f "$DIR/Makefile" all &
+(cd "$DIR" && echo in.tex | entr -p make all) &
 entr_pid=$!
 
 gvim_alive=1
