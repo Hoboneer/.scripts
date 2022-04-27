@@ -1,0 +1,64 @@
+#!/bin/sh
+# DESCRIPTION: Manage sxhkd macros.
+# DEPENDENCIES: flock hkxargs
+usage ()
+{
+	cat <<EOF
+usage: $(basename -- "$0") subcommand [option ...]
+
+Manage sxhkd macros.
+
+subcommands:
+  tick HOTKEY			append HOTKEY to currently recording macro
+  record REGISTER		begin recording macro into register REGISTER
+  stop				stop recording macro
+  exec REGISTER			play macro in register REGISTER
+EOF
+}
+
+macrodir="$XDG_RUNTIME_DIR/sxhkd/macros"
+currmacro="$macrodir/record"
+currmacrolock="$currmacro.lock"
+mkdir -p "$macrodir"
+
+# TODO: revise locking (this code may be ineffective)
+case $1 in
+	tick)	# include hotkey in current macro
+		hotkey="$2"
+		[ -z "$hotkey" ] && exit
+		[ -w "$currmacro" ] || exit
+		exec 9<> "$currmacrolock"
+		flock 9
+		echo "$hotkey" >>"$currmacro"
+		exec 9<&-
+		exit
+		;;
+	record)	# begin recording
+		register="$2"
+		[ -z "$register" ] && exit
+		[ -w "$currmacro" ] && exit 123
+		rm -f -- "$macrodir/$register.macro"
+		touch "$macrodir/$register.macro"
+		flock "$currmacrolock" ln -sf "$macrodir/$register.macro" "$currmacro"
+		exit
+		;;
+	stop)	# stop recording
+		flock "$currmacrolock" rm -f -- "$currmacro"
+		exit
+		;;
+	exec)	# execute macro
+		register="$2"
+		[ -z "$register" ] && exit
+		exec 9< "$macrodir/$register.macro" || exit 124
+		flock -s 9
+		hkxargs -d 0.3 -e <&9
+		exit
+		;;
+	--h|--he|--hel|--help|-h)
+		usage
+		exit
+		;;
+	*)
+		exit 1
+		;;
+esac
