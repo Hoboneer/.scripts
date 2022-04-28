@@ -16,7 +16,7 @@ subcommands:
 EOF
 }
 
-macrodir="$XDG_RUNTIME_DIR/sxhkd/macros"
+macrodir="${SXHKD_MACRO_DIR:-$XDG_RUNTIME_DIR/sxhkd/macros}"
 currmacro="$macrodir/record"
 currmacrolock="$currmacro.lock"
 mkdir -p "$macrodir"
