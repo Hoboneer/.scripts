@@ -10,7 +10,7 @@ Manage sxhkd macros.
 
 subcommands:
   tick HOTKEY			append HOTKEY to currently recording macro
-  record REGISTER		begin recording macro into register REGISTER
+  record [-a] REGISTER		begin recording macro into register REGISTER (-a for append)
   stop				stop recording macro
   exec REGISTER			play macro in register REGISTER
 EOF
@@ -34,10 +34,15 @@ case $1 in
 		exit
 		;;
 	record)	# begin recording
-		register="$2"
+		case $2 in
+			-a)	append=1; register="$3" ;;
+			*)	append=0; register="$2" ;;
+		esac
 		[ -z "$register" ] && exit
 		[ -w "$currmacro" ] && exit 123
-		rm -f -- "$macrodir/$register.macro"
+		if ! [ "$append" = 1 ]; then
+			rm -f -- "$macrodir/$register.macro"
+		fi
 		touch "$macrodir/$register.macro"
 		flock "$currmacrolock" ln -sf "$macrodir/$register.macro" "$currmacro"
 		exit
