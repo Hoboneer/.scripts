@@ -1,6 +1,6 @@
 #!/bin/sh
 # DESCRIPTION: Manage sxhkd macros.
-# DEPENDENCIES: flock hkxargs
+# DEPENDENCIES: flock hkxargs readlink
 usage ()
 {
 	cat <<EOF
@@ -13,6 +13,7 @@ subcommands:
   record [-a] REGISTER		begin recording macro into register REGISTER (-a for append)
   stop				stop recording macro
   exec REGISTER			play macro in register REGISTER
+  query				print current macro recording state
 EOF
 }
 
@@ -58,6 +59,14 @@ case $1 in
 		flock -s 9
 		hkxargs -d 0.3 -e <&9
 		exit
+		;;
+	query)	# get current macro recording state
+		macro="$(basename -- "$(readlink -- "$currmacro")" .macro)"
+		if [ -n "$macro" ]; then
+			echo "currently recording macro '$macro'"
+		else
+			echo "not recording anything"
+		fi
 		;;
 	--h|--he|--hel|--help|-h)
 		usage
