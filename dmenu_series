@@ -32,7 +32,7 @@ do_play ()
 		pos="$(cat progress 2>/dev/null || { echo 0 | tee progress; })"
 	fi
 	offset="$(cat playlist-offset 2>/dev/null || echo 0)"
-	mpv --playlist=playlist --playlist-start="$(( pos + offset ))"
+	mpv $(cat WATCH-FLAGS) --playlist=playlist --playlist-start="$(( pos + offset ))"
 }
 
 series="$(find "$seriesdir" -maxdepth 1 -type d -o -type l | sort | grep -vFx "$seriesdir" | xargs -n1 basename | dmenu -i -p 'Which series?')" || exit 1
