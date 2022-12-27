@@ -56,7 +56,6 @@ bspc subscribe report |
 							case $desktype in
 								[OFU])	#textcolor="$COLOR_FOREGROUND"
 									textcolor=''
-									case "$item" in (U*) notify-send -u critical bspwm_panel 'Got a focused urgent desktop!' ;; esac
 									bgcolor="$COLOR_BACKGROUND_ALT"
 									ulcolor="$COLOR_PRIMARY"
 									;;
