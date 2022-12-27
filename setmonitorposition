@@ -1,0 +1,43 @@
+#!/bin/bash
+# DESCRIPTION: Set position of a monitor relative to others.
+# DEPENDENCIES: dmenu xrandr
+
+[ -n "$1" ] && subjectmon="$1"
+MONITORS=( $(xrandr -q | awk '$2 == "connected" {print $1}') )
+
+in_MONITORS ()
+{
+	# Empty input: trivially not in monitors.
+	[ -z "$1" ] && return 1
+	local m
+	for m in "${MONITORS[@]}"; do
+		if [ "$1" = "$m" ]; then
+			# Found.
+			return 0
+		fi
+	done
+	return 1
+}
+
+if ! in_MONITORS "$subjectmon"; then
+	mon="$(for m in "${MONITORS[@]}"; do echo "$m"; done |
+		dmenu -l 20 -p 'Which monitor to change?')" || exit 1
+else
+	mon="$subjectmon"
+fi
+[ -z "$mon" ] && exit 1
+
+relativetomon="$(for m in "${MONITORS[@]}"; do [ "$m" != "$mon" ] && echo "$m"; done |
+	dmenu -l 20 -p "$mon: Which monitor to position relative to?")" || exit 1
+[ -z "$relativetomon" ] && exit 1
+
+position="$(cat <<'EOF' | dmenu -l 20 -p "$mon->$relativetomon: Which position?"
+left-of
+right-of
+above
+below
+same-as
+EOF
+)"
+
+xrandr --output "$mon" --auto --"$position" "$relativetomon" && notify-send -t 5000 monitor_position "Set '$mon' ${position/-/ } '$relativetomon'"
