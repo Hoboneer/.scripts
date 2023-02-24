@@ -1,1 +1,6 @@
 dmenu_emoji
+
+# Editor turds
+*.sw[op]
+*~
+*#
