@@ -1,0 +1,22 @@
+#!/bin/sh
+usage ()
+{
+	cat <<'EOF'
+Usage: pdfreversepages [--help] infile outfile
+Reverse the pages of a PDF.
+
+Options:
+  --help, -h	View this help message
+EOF
+}
+
+case "$1" in
+	--help|-h) usage; exit ;;
+esac
+
+[ -z "$1" ] && { echo "first file argument missing" >&2; exit 1; }
+[ -z "$2" ] && { echo "second file argument missing" >&2; exit 1; }
+infile="$1"
+outfile="$2"
+
+qpdf --pages "$infile" z-1 -- --empty "$outfile"
