@@ -1,6 +1,7 @@
 #!/bin/sh
 # DESCRIPTION: Place mouse pointer at centre of window if one is focused, otherwise in the centre of the screen
 # DEPENDENCIES: bspc(bspwm) jq xdotool
+# TODO: handle focused nodes that are non-leaf nodes
 bspc query -T -m focused |
 	jq -r '	.focusedDesktopId as $deskid | .rectangle as $screenrect | .padding as $screenpadding |
 		.desktops[] | select(.id == $deskid) |
