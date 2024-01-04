@@ -1,0 +1,38 @@
+#!/bin/sh
+# DEPENDENCIES: bspwm jq xdotool
+
+target_class="$1"
+[ -z "$target_class" ] && { printf 'Target class must be non-empty\n' >&2; exit 1; }
+shift
+
+if [ "$#" = 0 ]; then
+    printf 'There must be at least one key\n' >&2
+    exit 1
+fi
+for k in "$@"; do
+	[ -z "$k" ] && { printf 'One key in sequence was empty\n' >&2; exit 1; }
+	case "$k" in
+		*[[:space:]]*)
+			printf 'Keys must not contain whitespace but got "%s"\n' "$k"
+			exit 1
+			;;
+	esac
+done
+
+for id in $(bspc query -N -n .marked); do
+	winid=$(bspc query -T -n $id | jq -r '.id');
+	case "$winid" in
+		*[[:space:]]*)
+		    	# NOTE: we do this so we can build the xdotool key option arguments without needing bash arrays
+			printf 'Found a window id with embedded whitespace... ignoring winid="%s"\n' "$winid"
+			continue
+			;;
+	esac
+	classname=$(bspc query -T -n $id | jq -r '.client.className');
+	if [ "$classname" != "$target_class" ]; then printf 'Ignoring marked window with a different class "%s"\n' "$classname"; continue; fi
+	xdotool windowactivate --sync $winid \
+		windowfocus --sync $winid \
+		$(for k in "$@"; do
+			printf ' key --window %s --clearmodifiers --delay 30  %s' "$winid" "$k"
+		done)
+done
