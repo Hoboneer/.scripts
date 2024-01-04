@@ -7,6 +7,11 @@
 infile="$1"
 outfile="$2"
 chapter="$3"
-json="$(ffprobe -i "$infile" -print_format json -show_chapters -loglevel error | jq --arg chapter "$chapter" '.chapters[] | select(.tags.title | contains($chapter))')"
+matches="$(ffprobe -i "$infile" -print_format json -show_chapters -loglevel error |
+		jq --arg chapter "$chapter" \
+		   '.chapters[] | select(.tags.title | test($chapter))')"
+# For now, just take the first match.
+json="$(echo "$matches" | jq -s ".[0]")"
+echo "Copying chapter $(echo "$json" | jq '.tags.title')" >&2
 # We don't copy over chapters since they would be meaningless in the output file
 ffmpeg  -i "$infile" -acodec copy -vcodec copy -map_chapters -1 -ss $(echo "$json" | jq -r .start_time) -to $(echo "$json" | jq -r .end_time) "$outfile"
