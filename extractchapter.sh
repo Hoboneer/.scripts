@@ -4,6 +4,7 @@
 # See https://stackoverflow.com/questions/30305953/is-there-an-elegant-way-to-split-a-file-by-chapter-using-ffmpeg
 # TODO: should we be able to extract multiple chapters at once?  (into one file or split?)
 # TODO: should the chapter argument(s) be regexes?  (so they can select multiple chapters at once?)
+# TODO: rewrite in a better language?  Python maybe?  (See ffmpeg-python: https://github.com/kkroening/ffmpeg-python)
 infile="$1"
 outfile="$2"
 chapter="$3"
